@@ -5,6 +5,16 @@ const chalk = require('chalk');
 const path = require('path');
 const fs = require('fs').promises;
 
+// Import core modules
+const { loadProtocols } = require('../lib/loader');
+const { analyzeMultipleProtocols } = require('../lib/analyzer');
+const {
+  calculateHealthScore,
+  generateCLIReport,
+  generateJSONReport,
+  getExitCode
+} = require('../lib/reporter');
+
 const program = new Command();
 
 // Global options
@@ -27,49 +37,68 @@ program
     try {
       console.log(chalk.blue('🔍 Running documentation health check...\n'));
       
-      // Placeholder for actual health check logic
-      const healthScore = Math.floor(Math.random() * 30) + 70; // 70-100 range
-      const issues = healthScore < 90 ? Math.floor(Math.random() * 5) + 1 : 0;
+      // Load protocols from specified path
+      const loadResults = await loadProtocols(options.path);
       
-      const results = {
-        healthScore,
-        status: healthScore >= 90 ? 'healthy' : healthScore >= 70 ? 'warning' : 'critical',
-        issues,
-        protocolsChecked: 5,
-        timestamp: new Date().toISOString()
+      if (loadResults.errors.length > 0) {
+        console.error(chalk.yellow(`⚠️  Warning: ${loadResults.errors.length} protocol(s) failed to load`));
+        if (program.opts().verbose) {
+          loadResults.errors.forEach(err => {
+            console.error(chalk.gray(`  - ${err.path}: ${err.message}`));
+          });
+        }
+      }
+
+      if (loadResults.protocols.length === 0) {
+        console.error(chalk.red('❌ No protocols found or loaded successfully'));
+        process.exit(2);
+      }
+
+      // Extract manifests from loaded protocols
+      const manifests = loadResults.protocols.map(p => p.protocol.manifest());
+      
+      // Analyze all protocols
+      const analysisResults = analyzeMultipleProtocols(manifests);
+      
+      // Calculate health score
+      const healthScore = calculateHealthScore(analysisResults);
+      
+      // Generate report based on output format
+      const globalOpts = program.opts();
+      const reportOpts = {
+        showDetails: true,
+        color: globalOpts.color !== false
       };
 
-      if (program.opts().json) {
-        console.log(JSON.stringify(results, null, 2));
+      if (globalOpts.json) {
+        const jsonReport = generateJSONReport(healthScore, analysisResults, {
+          includeDetails: true
+        });
+        console.log(JSON.stringify(jsonReport, null, 2));
       } else {
-        console.log(chalk.bold('Health Score:'), 
-          healthScore >= 90 ? chalk.green(`${healthScore}/100`) :
-          healthScore >= 70 ? chalk.yellow(`${healthScore}/100`) :
-          chalk.red(`${healthScore}/100`)
-        );
-        console.log(chalk.bold('Status:'), results.status);
-        console.log(chalk.bold('Protocols Checked:'), results.protocolsChecked);
-        if (issues > 0) {
-          console.log(chalk.bold('Issues Found:'), chalk.red(issues));
-        }
-        console.log(chalk.bold('Timestamp:'), results.timestamp);
+        const cliReport = generateCLIReport(healthScore, analysisResults, reportOpts);
+        console.log(cliReport);
       }
 
       // Exit code handling
-      const threshold = parseInt(program.opts().threshold);
-      if (healthScore < threshold) {
-        console.error(chalk.red(`\n❌ Health score ${healthScore} below threshold ${threshold}`));
-        process.exit(1);
-      } else if (options.strict && issues > 0) {
-        console.error(chalk.red('\n❌ Strict mode: Issues found'));
-        process.exit(1);
-      } else {
+      const exitCode = getExitCode(healthScore, {
+        threshold: parseInt(globalOpts.threshold),
+        strict: options.strict
+      });
+      
+      if (exitCode === 0) {
         console.log(chalk.green('\n✅ Health check passed'));
-        process.exit(0);
+      } else {
+        console.error(chalk.red(`\n❌ Health check failed (exit code: ${exitCode})`));
       }
+      
+      process.exit(exitCode);
 
     } catch (error) {
       console.error(chalk.red('Error running health check:'), error.message);
+      if (program.opts().verbose) {
+        console.error(error.stack);
+      }
       process.exit(2);
     }
   });
