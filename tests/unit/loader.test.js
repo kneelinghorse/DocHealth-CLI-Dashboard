@@ -113,9 +113,10 @@ test('loadProtocols - should handle invalid directory', async () => {
 });
 
 test('loadProtocols - should collect errors for invalid protocols', async () => {
-  // Create a temporary invalid protocol file
+  // Create a temporary invalid protocol file with a valid protocol name
+  // but invalid content (missing factory function)
   const tempDir = path.join(__dirname, '../fixtures/temp');
-  const tempFile = path.join(tempDir, 'invalid_protocol.js');
+  const tempFile = path.join(tempDir, 'api_protocol_invalid.js');
   
   try {
     await fs.mkdir(tempDir, { recursive: true });
