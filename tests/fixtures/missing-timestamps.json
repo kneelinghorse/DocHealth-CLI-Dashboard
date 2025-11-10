@@ -1,0 +1,61 @@
+{
+  "documentation": {
+    "id": "incomplete-docs",
+    "title": "Documentation with Missing Timestamps",
+    "format": "md",
+    "lifecycle": {
+      "status": "draft"
+    }
+  },
+  "links": {
+    "targets": [
+      "urn:proto:api:unknown@1.0.0"
+    ]
+  },
+  "structure": {
+    "navigation": [
+      {
+        "id": "overview",
+        "title": "Overview",
+        "href": "#overview"
+      },
+      {
+        "id": "api-reference",
+        "title": "API Reference",
+        "href": "#api-reference"
+      },
+      {
+        "id": "examples",
+        "title": "Examples",
+        "href": "#examples"
+      },
+      {
+        "id": "troubleshooting",
+        "title": "Troubleshooting",
+        "href": "#troubleshooting"
+      }
+    ],
+    "sections": [
+      {
+        "id": "overview",
+        "title": "Overview",
+        "body": "This documentation is missing critical timestamp information for freshness checking."
+      }
+    ]
+  },
+  "maintenance": {
+    "freshness_check": {
+      "enabled": false
+    }
+  },
+  "quality": {
+    "docs_health": {
+      "coverage": 25,
+      "missing_sections": ["api-reference", "examples", "troubleshooting"]
+    }
+  },
+  "metadata": {
+    "owner": "unknown",
+    "tags": ["incomplete", "draft"]
+  }
+}

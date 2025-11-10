@@ -1,0 +1,72 @@
+{
+  "documentation": {
+    "id": "stale-api-docs",
+    "title": "Stale API Documentation",
+    "format": "md",
+    "lifecycle": {
+      "status": "published",
+      "created_at": "2025-09-01T10:00:00Z",
+      "updated_at": "2025-09-01T12:00:00Z"
+    }
+  },
+  "links": {
+    "targets": [
+      "urn:proto:api:payments@1.1.1",
+      "urn:proto:data:transactions@1.1.1"
+    ]
+  },
+  "structure": {
+    "navigation": [
+      {
+        "id": "overview",
+        "title": "Overview",
+        "href": "#overview"
+      },
+      {
+        "id": "authentication",
+        "title": "Authentication",
+        "href": "#authentication"
+      },
+      {
+        "id": "endpoints",
+        "title": "Endpoints",
+        "children": [
+          {
+            "id": "payments",
+            "title": "Payments API",
+            "href": "#payments"
+          }
+        ]
+      }
+    ],
+    "sections": [
+      {
+        "id": "overview",
+        "title": "Overview",
+        "body": "This documentation is stale - the code was last changed 38 days ago but the documentation hasn't been updated since."
+      },
+      {
+        "id": "authentication",
+        "title": "Authentication",
+        "body": "API key authentication is required. Pass the key in the X-API-Key header."
+      }
+    ]
+  },
+  "maintenance": {
+    "freshness_check": {
+      "enabled": true,
+      "source_code_path": "./src/api_protocol_v_1_1_1.js",
+      "last_code_change_at": "2025-10-03T14:30:00Z"
+    }
+  },
+  "quality": {
+    "docs_health": {
+      "coverage": 60,
+      "missing_sections": ["webhooks", "error-codes", "rate-limits"]
+    }
+  },
+  "metadata": {
+    "owner": "payments-team",
+    "tags": ["api", "stale", "needs-update"]
+  }
+}

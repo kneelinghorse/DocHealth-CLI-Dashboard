@@ -1,0 +1,221 @@
+{
+  "dataset": {
+    "name": "user_events",
+    "type": "fact-table",
+    "description": "User activity events for analytics and personalization",
+    "lifecycle": {
+      "status": "active",
+      "created_at": "2025-09-01T00:00:00Z"
+    }
+  },
+  "schema": {
+    "primary_key": "event_id",
+    "fields": {
+      "event_id": {
+        "type": "string",
+        "required": true,
+        "description": "Unique identifier for each event"
+      },
+      "user_id": {
+        "type": "string",
+        "required": true,
+        "description": "User identifier (anonymized)"
+      },
+      "session_id": {
+        "type": "string",
+        "required": false,
+        "description": "Session identifier for grouping events"
+      },
+      "event_type": {
+        "type": "string",
+        "required": true,
+        "description": "Type of event (page_view, click, purchase, etc.)"
+      },
+      "event_timestamp": {
+        "type": "timestamp",
+        "required": true,
+        "description": "When the event occurred"
+      },
+      "page_url": {
+        "type": "string",
+        "required": false,
+        "description": "URL of the page where event occurred"
+      },
+      "referrer_url": {
+        "type": "string",
+        "required": false,
+        "description": "Referring URL"
+      },
+      "device_type": {
+        "type": "string",
+        "required": false,
+        "description": "Device type (desktop, mobile, tablet)"
+      },
+      "browser": {
+        "type": "string",
+        "required": false,
+        "description": "Browser name and version"
+      },
+      "geo_country": {
+        "type": "string",
+        "required": false,
+        "description": "Geographic country code"
+      },
+      "geo_city": {
+        "type": "string",
+        "required": false,
+        "description": "Geographic city name"
+      },
+      "utm_source": {
+        "type": "string",
+        "required": false,
+        "description": "UTM source for campaign tracking"
+      },
+      "utm_medium": {
+        "type": "string",
+        "required": false,
+        "description": "UTM medium for campaign tracking"
+      },
+      "utm_campaign": {
+        "type": "string",
+        "required": false,
+        "description": "UTM campaign for campaign tracking"
+      },
+      "revenue": {
+        "type": "decimal",
+        "required": false,
+        "description": "Revenue amount for purchase events"
+      },
+      "items_purchased": {
+        "type": "integer",
+        "required": false,
+        "description": "Number of items purchased"
+      }
+    },
+    "keys": {
+      "unique": ["event_id"],
+      "foreign_keys": [
+        {
+          "field": "user_id",
+          "ref": "dim_users.id"
+        }
+      ],
+      "partition": {
+        "field": "event_timestamp",
+        "type": "daily"
+      }
+    }
+  },
+  "lineage": {
+    "sources": [
+      {
+        "type": "service",
+        "id": "web-analytics-collector",
+        "description": "Web analytics collection service"
+      },
+      {
+        "type": "service",
+        "id": "mobile-sdk",
+        "description": "Mobile app analytics SDK"
+      }
+    ],
+    "consumers": [
+      {
+        "type": "model",
+        "id": "user-segmentation-ml",
+        "description": "ML model for user segmentation"
+      },
+      {
+        "type": "model",
+        "id": "churn-prediction",
+        "description": "Churn prediction model"
+      },
+      {
+        "type": "dashboard",
+        "id": "executive-dashboard",
+        "description": "Executive analytics dashboard"
+      },
+      {
+        "type": "external",
+        "id": "marketing-platform",
+        "description": "Third-party marketing platform"
+      }
+    ]
+  },
+  "operations": {
+    "refresh": {
+      "schedule": "hourly",
+      "expected_by": "08:00Z",
+      "latency_sla": "15 minutes"
+    },
+    "retention": "2-years",
+    "backfill": {
+      "enabled": true,
+      "max_lookback_days": 90
+    }
+  },
+  "governance": {
+    "policy": {
+      "classification": "internal",
+      "legal_basis": "gdpr",
+      "data_subject_rights": true,
+      "anonymization_required": false
+    },
+    "storage_residency": {
+      "region": "eu-west-1",
+      "vendor": "aws-s3",
+      "encrypted_at_rest": true,
+      "encrypted_in_transit": true
+    },
+    "access_control": {
+      "role_based": true,
+      "row_level_security": true,
+      "column_level_masking": [
+        {
+          "column": "user_id",
+          "masking_policy": "partial",
+          "allowed_roles": ["data-scientist", "analyst"]
+        }
+      ]
+    }
+  },
+  "quality": {
+    "freshness_ts": "2025-11-10T18:00:00Z",
+    "row_count_estimate": 15432000,
+    "null_rate": {
+      "session_id": 0.05,
+      "page_url": 0.02,
+      "referrer_url": 0.35,
+      "utm_source": 0.68,
+      "utm_medium": 0.68,
+      "utm_campaign": 0.72,
+      "revenue": 0.92,
+      "items_purchased": 0.92
+    },
+    "completeness_score": 0.78,
+    "accuracy_score": 0.95,
+    "consistency_checks": [
+      {
+        "name": "event_timestamp_not_null",
+        "pass_rate": 1.0
+      },
+      {
+        "name": "event_id_unique",
+        "pass_rate": 1.0
+      },
+      {
+        "name": "user_id_not_null",
+        "pass_rate": 1.0
+      }
+    ]
+  },
+  "catalog": {
+    "owner": "analytics-team",
+    "tags": ["events", "user-behavior", "analytics", "pii-potential"],
+    "domain": "product-analytics",
+    "criticality": "high",
+    "steward": "data-governance@company.com",
+    "last_reviewed": "2025-10-15T00:00:00Z",
+    "review_cycle_days": 90
+  }
+}

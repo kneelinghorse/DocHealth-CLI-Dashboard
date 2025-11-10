@@ -1,0 +1,506 @@
+{
+  "service": {
+    "name": "billing-api",
+    "version": "2.1.0",
+    "description": "Billing and invoicing API for subscription management"
+  },
+  "capabilities": {
+    "domains": ["billing", "subscriptions", "invoicing", "payments"],
+    "features": ["recurring-billing", "usage-based-pricing", "multi-currency", "tax-calculation"]
+  },
+  "interface": {
+    "authentication": {
+      "type": "oauth2",
+      "in": "header",
+      "scopes": [
+        "billing:read",
+        "billing:write",
+        "subscriptions:manage"
+      ],
+      "token_endpoint": "https://auth.company.com/oauth/token"
+    },
+    "endpoints": [
+      {
+        "method": "GET",
+        "path": "/v2/invoices",
+        "summary": "List invoices with pagination",
+        "description": "Retrieve a paginated list of invoices for the authenticated tenant",
+        "params": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["draft", "sent", "paid", "overdue", "cancelled"]
+            },
+            "description": "Filter by invoice status"
+          },
+          {
+            "name": "customer_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter by customer ID"
+          },
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "description": "Filter invoices from this date (ISO 8601)"
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "description": "Filter invoices up to this date (ISO 8601)"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            },
+            "description": "Number of results per page"
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Pagination cursor for next page"
+          }
+        ],
+        "request": {
+          "contentType": "application/json"
+        },
+        "responses": [
+          {
+            "status": 200,
+            "description": "Successful response with invoice list",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Invoice"
+                  }
+                },
+                "pagination": {
+                  "type": "object",
+                  "properties": {
+                    "next_cursor": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "has_more": {
+                      "type": "boolean"
+                    },
+                    "total_count": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "errors": [
+          {
+            "code": "INVALID_DATE_RANGE",
+            "http": 400,
+            "retriable": false,
+            "docs": "The date_from parameter must be before date_to"
+          },
+          {
+            "code": "INVALID_STATUS",
+            "http": 400,
+            "retriable": false,
+            "docs": "The status parameter must be one of: draft, sent, paid, overdue, cancelled"
+          }
+        ],
+        "pagination": {
+          "style": "cursor",
+          "params": {
+            "cursor": "cursor",
+            "limit": "limit"
+          }
+        }
+      },
+      {
+        "method": "POST",
+        "path": "/v2/invoices",
+        "summary": "Create a new invoice",
+        "description": "Create a new invoice for a customer with line items",
+        "params": [],
+        "request": {
+          "contentType": "application/json",
+          "schema": {
+            "type": "object",
+            "required": ["customer_id", "line_items"],
+            "properties": {
+              "customer_id": {
+                "type": "string",
+                "description": "Customer ID for the invoice"
+              },
+              "due_date": {
+                "type": "string",
+                "format": "date",
+                "description": "Invoice due date (ISO 8601)"
+              },
+              "line_items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/LineItem"
+                }
+              },
+              "tax_rate": {
+                "type": "number",
+                "description": "Tax rate as decimal (e.g., 0.08 for 8%)"
+              },
+              "currency": {
+                "type": "string",
+                "default": "USD",
+                "enum": ["USD", "EUR", "GBP", "CAD", "AUD"]
+              }
+            }
+          }
+        },
+        "responses": [
+          {
+            "status": 201,
+            "description": "Invoice created successfully",
+            "schema": {
+              "$ref": "#/components/schemas/Invoice"
+            }
+          },
+          {
+            "status": 400,
+            "description": "Invalid request data"
+          }
+        ],
+        "errors": [
+          {
+            "code": "INVALID_CUSTOMER",
+            "http": 400,
+            "retriable": false,
+            "docs": "The customer_id does not exist"
+          },
+          {
+            "code": "INVALID_LINE_ITEMS",
+            "http": 400,
+            "retriable": false,
+            "docs": "Line items are invalid or empty"
+          },
+          {
+            "code": "TAX_CALCULATION_FAILED",
+            "http": 422,
+            "retriable": false,
+            "docs": "Unable to calculate tax for the given address"
+          }
+        ],
+        "idempotency_key": "customer_id,line_items_hash"
+      },
+      {
+        "method": "GET",
+        "path": "/v2/subscriptions/{subscription_id}",
+        "summary": "Get subscription details",
+        "description": "Retrieve detailed information about a specific subscription",
+        "params": [
+          {
+            "name": "subscription_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Subscription ID"
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": ["invoices", "usage", "payment_method"]
+              }
+            },
+            "description": "Related resources to include in response"
+          }
+        ],
+        "responses": [
+          {
+            "status": 200,
+            "description": "Subscription details",
+            "schema": {
+              "$ref": "#/components/schemas/Subscription"
+            }
+          },
+          {
+            "status": 404,
+            "description": "Subscription not found"
+          }
+        ],
+        "errors": [
+          {
+            "code": "SUBSCRIPTION_NOT_FOUND",
+            "http": 404,
+            "retriable": false,
+            "docs": "The subscription ID does not exist"
+          }
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/v2/subscriptions/{subscription_id}/cancel",
+        "summary": "Cancel a subscription",
+        "description": "Cancel an active subscription at the end of the current billing period",
+        "params": [
+          {
+            "name": "subscription_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Subscription ID to cancel"
+          }
+        ],
+        "request": {
+          "contentType": "application/json",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "cancellation_reason": {
+                "type": "string",
+                "description": "Reason for cancellation"
+              },
+              "feedback": {
+                "type": "string",
+                "description": "Customer feedback"
+              }
+            }
+          }
+        },
+        "responses": [
+          {
+            "status": 200,
+            "description": "Subscription cancelled successfully",
+            "schema": {
+              "$ref": "#/components/schemas/Subscription"
+            }
+          }
+        ],
+        "errors": [
+          {
+            "code": "SUBSCRIPTION_ALREADY_CANCELLED",
+            "http": 400,
+            "retriable": false,
+            "docs": "Subscription is already cancelled"
+          },
+          {
+            "code": "SUBSCRIPTION_NOT_ACTIVE",
+            "http": 400,
+            "retriable": false,
+            "docs": "Only active subscriptions can be cancelled"
+          }
+        ],
+        "idempotency_key": "subscription_id"
+      }
+    ]
+  },
+  "operations": {
+    "rate_limits": [
+      {
+        "scope": "tenant",
+        "limit": 10000,
+        "window": "1m",
+        "burst": 500
+      },
+      {
+        "scope": "user",
+        "limit": 1000,
+        "window": "1m",
+        "burst": 100
+      },
+      {
+        "scope": "ip",
+        "limit": 100,
+        "window": "1m",
+        "burst": 20
+      }
+    ],
+    "circuit_breaker": {
+      "enabled": true,
+      "failure_threshold": 50,
+      "recovery_timeout": "30s",
+      "expected_status_codes": [500, 502, 503, 504]
+    },
+    "webhooks": {
+      "enabled": true,
+      "endpoints": [
+        "https://hooks.company.com/billing",
+        "https://backup-hooks.company.com/billing"
+      ],
+      "retry_policy": {
+        "max_attempts": 3,
+        "backoff": "exponential"
+      }
+    }
+  },
+  "context": {
+    "domain": "finance",
+    "team": "billing-platform",
+    "tier": "critical",
+    "region": "multi-region",
+    "compliance": ["soc2", "pci-dss", "gdpr"]
+  },
+  "validation": {
+    "schemas": {
+      "Invoice": {
+        "type": "object",
+        "required": ["id", "customer_id", "status", "total_amount"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Invoice unique identifier"
+          },
+          "customer_id": {
+            "type": "string",
+            "description": "Customer ID"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["draft", "sent", "paid", "overdue", "cancelled"]
+          },
+          "total_amount": {
+            "type": "number",
+            "minimum": 0
+          },
+          "currency": {
+            "type": "string",
+            "enum": ["USD", "EUR", "GBP", "CAD", "AUD"]
+          },
+          "line_items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LineItem"
+            }
+          },
+          "due_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "LineItem": {
+        "type": "object",
+        "required": ["description", "quantity", "unit_price"],
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "unit_price": {
+            "type": "number",
+            "minimum": 0
+          },
+          "tax_rate": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      },
+      "Subscription": {
+        "type": "object",
+        "required": ["id", "customer_id", "status", "plan_id"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "customer_id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "cancelled", "past_due", "trialing"]
+          },
+          "plan_id": {
+            "type": "string"
+          },
+          "current_period_start": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "current_period_end": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "cancel_at_period_end": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  },
+  "quality": {
+    "test_coverage": 0.89,
+    "status_url": "https://status.company.com/billing-api",
+    "uptime_sla": 0.999,
+    "average_latency_p95": "120ms",
+    "error_rate": 0.001
+  },
+  "metadata": {
+    "lifecycle": {
+      "status": "ga",
+      "created_at": "2024-01-15T00:00:00Z",
+      "last_updated": "2025-11-10T18:00:00Z"
+    },
+    "owner": "billing-platform-team",
+    "tags": ["billing", "finance", "critical", "external-facing"],
+    "version": "2.1.0",
+    "changelog_url": "https://docs.company.com/billing-api/changelog"
+  },
+  "relationships": {
+    "dependencies": [
+      "urn:proto:service:auth-service@2.0.0",
+      "urn:proto:service:notification-service@1.5.0",
+      "urn:proto:data:customer-db@1.2.0"
+    ],
+    "consumers": [
+      "urn:proto:app:web-dashboard@3.1.0",
+      "urn:proto:app:mobile-app@2.8.0",
+      "urn:proto:integration:accounting-software@1.0.0"
+    ],
+    "complements": [
+      "urn:proto:api:usage-metering@1.1.0"
+    ]
+  }
+}

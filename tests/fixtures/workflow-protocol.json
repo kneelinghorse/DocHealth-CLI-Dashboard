@@ -1,0 +1,260 @@
+{
+  "workflow": {
+    "id": "order-fulfillment",
+    "name": "Order Fulfillment Workflow",
+    "description": "End-to-end order processing from validation to delivery",
+    "purpose": "Automate order fulfillment with human approval steps for high-value orders",
+    "migration_strategy": "finish_inflight",
+    "version": "3.2.1"
+  },
+  "sla": {
+    "timeout": "2h",
+    "on_timeout_event": "workflow.order_fulfillment.timeout",
+    "escalation_policy": "notify-ops-team"
+  },
+  "steps": [
+    {
+      "id": "validate_order",
+      "type": "service",
+      "service": "order-service.validate",
+      "description": "Validate order data and check inventory availability",
+      "inputs": {
+        "order_id": "ctx.order_id",
+        "customer_id": "ctx.customer_id"
+      },
+      "retry": {
+        "retries": 3,
+        "backoff": "exponential",
+        "initial_delay": "1s",
+        "max_delay": "30s"
+      },
+      "idempotency_key": "order_id",
+      "outputs": {
+        "validation_result": "validation.result",
+        "inventory_status": "inventory.status",
+        "total_amount": "order.total_amount"
+      },
+      "error_handling": {
+        "on_failure": "compensate_inventory_hold"
+      }
+    },
+    {
+      "id": "check_fraud_risk",
+      "type": "service",
+      "service": "fraud-detection.check",
+      "description": "Check order for fraud indicators",
+      "dependencies": ["validate_order"],
+      "inputs": {
+        "order_id": "ctx.order_id",
+        "customer_id": "ctx.customer_id",
+        "amount": "validate_order.total_amount",
+        "shipping_address": "ctx.shipping_address"
+      },
+      "retry": {
+        "retries": 2,
+        "backoff": "linear"
+      },
+      "outputs": {
+        "risk_score": "fraud.risk_score",
+        "risk_level": "fraud.risk_level"
+      }
+    },
+    {
+      "id": "process_payment",
+      "type": "service",
+      "service": "payment-service.charge",
+      "description": "Process payment for the order",
+      "dependencies": ["validate_order", "check_fraud_risk"],
+      "inputs": {
+        "order_id": "ctx.order_id",
+        "amount": "validate_order.total_amount",
+        "payment_method_id": "ctx.payment_method_id",
+        "fraud_risk_level": "check_fraud_risk.risk_level"
+      },
+      "retry": {
+        "retries": 3,
+        "backoff": "exponential"
+      },
+      "idempotency_key": "order_id",
+      "side_effects": true,
+      "outputs": {
+        "payment_id": "payment.id",
+        "payment_status": "payment.status",
+        "transaction_id": "payment.transaction_id"
+      },
+      "error_handling": {
+        "on_failure": "compensate_payment"
+      }
+    },
+    {
+      "id": "high_value_approval",
+      "type": "human",
+      "description": "Require manager approval for high-value orders",
+      "dependencies": ["process_payment"],
+      "human_task": {
+        "role": "manager",
+        "form_schema": {
+          "type": "object",
+          "properties": {
+            "approval_notes": {
+              "type": "string",
+              "description": "Notes from manager review"
+            },
+            "shipping_priority": {
+              "type": "string",
+              "enum": ["standard", "express", "overnight"],
+              "default": "standard"
+            }
+          },
+          "required": ["approval_notes"]
+        },
+        "outcomes": ["approved", "rejected", "needs_review"],
+        "sla": "4h",
+        "escalation": {
+          "after": "2h",
+          "to": "senior_manager"
+        }
+      },
+      "inputs": {
+        "order_id": "ctx.order_id",
+        "amount": "validate_order.total_amount",
+        "customer_id": "ctx.customer_id",
+        "payment_status": "process_payment.payment_status"
+      },
+      "governance": {
+        "classification": "internal"
+      },
+      "condition": "validate_order.total_amount > 1000"
+    },
+    {
+      "id": "prepare_shipment",
+      "type": "service",
+      "service": "fulfillment.prepare",
+      "description": "Prepare shipment and create shipping label",
+      "dependencies": ["process_payment", "high_value_approval"],
+      "inputs": {
+        "order_id": "ctx.order_id",
+        "shipping_address": "ctx.shipping_address",
+        "shipping_priority": "high_value_approval.shipping_priority"
+      },
+      "retry": {
+        "retries": 2,
+        "backoff": "linear"
+      },
+      "side_effects": true,
+      "outputs": {
+        "shipment_id": "shipment.id",
+        "tracking_number": "shipment.tracking_number",
+        "carrier": "shipment.carrier"
+      },
+      "condition": "high_value_approval.outcome == 'approved' || validate_order.total_amount <= 1000"
+    },
+    {
+      "id": "send_confirmation",
+      "type": "event",
+      "description": "Send order confirmation email",
+      "dependencies": ["prepare_shipment"],
+      "inputs": {
+        "order_id": "ctx.order_id",
+        "customer_id": "ctx.customer_id",
+        "payment_id": "process_payment.payment_id",
+        "shipment_id": "prepare_shipment.shipment_id",
+        "tracking_number": "prepare_shipment.tracking_number"
+      },
+      "event_type": "order.confirmed",
+      "outputs": {
+        "notification_id": "notification.id",
+        "sent_at": "notification.sent_at"
+      }
+    },
+    {
+      "id": "update_inventory",
+      "type": "service",
+      "service": "inventory.update",
+      "description": "Update inventory levels after successful order",
+      "dependencies": ["prepare_shipment"],
+      "inputs": {
+        "order_id": "ctx.order_id",
+        "items": "ctx.line_items"
+      },
+      "retry": {
+        "retries": 3,
+        "backoff": "exponential"
+      },
+      "side_effects": true,
+      "outputs": {
+        "inventory_update_id": "inventory.update_id",
+        "new_stock_levels": "inventory.new_levels"
+      }
+    },
+    {
+      "id": "log_analytics",
+      "type": "event",
+      "description": "Log order completion for analytics",
+      "dependencies": ["send_confirmation", "update_inventory"],
+      "inputs": {
+        "order_id": "ctx.order_id",
+        "total_amount": "validate_order.total_amount",
+        "processing_time_ms": "ctx.workflow_duration",
+        "fraud_risk_level": "check_fraud_risk.risk_level"
+      },
+      "event_type": "order.completed",
+      "outputs": {
+        "analytics_id": "analytics.record_id"
+      }
+    }
+  ],
+  "metadata": {
+    "owner": "commerce-team",
+    "tags": ["order-processing", "fulfillment", "ecommerce", "critical"],
+    "domain": "commerce",
+    "criticality": "high",
+    "compliance": ["pci-dss", "gdpr"],
+    "version": "3.2.1",
+    "created_at": "2025-01-15T00:00:00Z",
+    "last_updated": "2025-11-10T18:00:00Z"
+  },
+  "compensation": {
+    "compensate_inventory_hold": {
+      "type": "service",
+      "service": "inventory.release_hold",
+      "description": "Release inventory hold if order fails"
+    },
+    "compensate_payment": {
+      "type": "service",
+      "service": "payment-service.refund",
+      "description": "Refund payment if order fails after payment"
+    }
+  },
+  "monitoring": {
+    "metrics": [
+      {
+        "name": "workflow_success_rate",
+        "type": "gauge",
+        "description": "Percentage of successful order fulfillments"
+      },
+      {
+        "name": "average_processing_time",
+        "type": "histogram",
+        "description": "Time to complete order fulfillment"
+      },
+      {
+        "name": "human_task_wait_time",
+        "type": "histogram",
+        "description": "Time waiting for human approval"
+      }
+    ],
+    "alerts": [
+      {
+        "condition": "workflow_success_rate < 0.95",
+        "severity": "warning",
+        "notify": ["commerce-team", "ops-team"]
+      },
+      {
+        "condition": "human_task_wait_time > 4h",
+        "severity": "critical",
+        "notify": ["commerce-team", "senior-managers"]
+      }
+    ]
+  }
+}
