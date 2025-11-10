@@ -1,0 +1,39 @@
+{
+  "name": "dochealth",
+  "version": "0.1.0",
+  "description": "A protocol-driven documentation orchestration tool that uses protocol manifests as the single source of truth to auto-generate documentation, monitor freshness, validate completeness, and route SME reviews intelligently.",
+  "main": "bin/dochealth.js",
+  "bin": {
+    "dochealth": "./bin/dochealth.js"
+  },
+  "scripts": {
+    "test": "node --test tests/**/*.test.js",
+    "test:unit": "node --test tests/unit/**/*.test.js",
+    "test:integration": "node --test tests/integration/**/*.test.js",
+    "test:coverage": "c8 --reporter=text --reporter=html npm test",
+    "lint": "eslint lib/ bin/ tests/",
+    "format": "prettier --write \"**/*.js\"",
+    "type-check": "echo \"No TypeScript configured yet\""
+  },
+  "keywords": [
+    "documentation",
+    "cli",
+    "protocol",
+    "health-check",
+    "api-docs"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^11.1.0",
+    "chalk": "^4.1.2"
+  },
+  "devDependencies": {
+    "c8": "^8.0.1",
+    "eslint": "^8.57.0",
+    "prettier": "^3.1.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
