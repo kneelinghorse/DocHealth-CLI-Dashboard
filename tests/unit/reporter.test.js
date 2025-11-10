@@ -12,13 +12,16 @@ const {
   getExitCode
 } = require('../../lib/reporter');
 
-// Mock analysis results for testing
+// Mock analysis results for testing (updated for Sprint 2 structure)
 const mockAnalysisResults = {
   total: 3,
   staleCount: 1,
   enabledCount: 3,
   hasTimestampsCount: 2,
-  avgHealthScore: 75,
+  avgFreshnessScore: 75,
+  avgCoverageScore: 80,
+  avgCombinedScore: 77,
+  overallCoveragePercentage: 85,
   severityBreakdown: {
     fresh: 1,
     low: 1,
@@ -29,46 +32,96 @@ const mockAnalysisResults = {
   protocols: [
     {
       id: 'api-protocol',
-      analysis: {
+      type: 'api',
+      freshness: {
         healthScore: 95,
+        freshnessScore: 0.95,
         isStale: false,
         severity: 'fresh',
         daysStale: 0,
         hasTimestamps: true,
         enabled: true,
         recommendations: ['Documentation up to date']
+      },
+      coverage: {
+        coverageScore: 0.9,
+        totalItems: 10,
+        documentedItems: 9,
+        coveragePercentage: 0.9,
+        missingDocumentation: [],
+        recommendations: ['Good coverage']
+      },
+      combined: {
+        healthScore: 93,
+        combinedScore: 0.93,
+        recommendations: ['Documentation up to date', 'Good coverage']
       }
     },
     {
       id: 'data-protocol',
-      analysis: {
+      type: 'data',
+      freshness: {
         healthScore: 85,
+        freshnessScore: 0.85,
         isStale: false,
         severity: 'low',
         daysStale: 3,
         hasTimestamps: true,
         enabled: true,
         recommendations: ['Within threshold']
+      },
+      coverage: {
+        coverageScore: 0.75,
+        totalItems: 20,
+        documentedItems: 15,
+        coveragePercentage: 0.75,
+        missingDocumentation: [],
+        recommendations: ['Add documentation for 5 fields']
+      },
+      combined: {
+        healthScore: 81,
+        combinedScore: 0.81,
+        recommendations: ['Within threshold', 'Add documentation for 5 fields']
       }
     },
     {
       id: 'workflow-protocol',
-      analysis: {
+      type: 'workflow',
+      freshness: {
         healthScore: 45,
+        freshnessScore: 0.45,
         isStale: true,
         severity: 'critical',
         daysStale: 45,
         hasTimestamps: false,
         enabled: true,
         recommendations: ['Missing timestamps', 'Update documentation']
+      },
+      coverage: {
+        coverageScore: 0.8,
+        totalItems: 5,
+        documentedItems: 4,
+        coveragePercentage: 0.8,
+        missingDocumentation: [],
+        recommendations: ['Good coverage']
+      },
+      combined: {
+        healthScore: 59,
+        combinedScore: 0.59,
+        recommendations: ['Missing timestamps', 'Update documentation', 'Good coverage']
       }
     }
   ],
   summary: {
     overallStatus: 'warning',
     needsAttention: [
-      { id: 'workflow-protocol', analysis: { isStale: true } }
+      { id: 'workflow-protocol', freshness: { isStale: true } }
     ]
+  },
+  coverageSummary: {
+    totalItems: 35,
+    documentedItems: 28,
+    coveragePercentage: 80
   }
 };
 
@@ -133,7 +186,7 @@ test('generateJSONReport - should generate structured JSON report', () => {
   const report = generateJSONReport(healthScore, mockAnalysisResults);
   
   assert.strictEqual(typeof report, 'object');
-  assert.strictEqual(report.version, '1.0.0');
+  assert.strictEqual(report.version, '2.0.0');
   assert.ok(report.timestamp);
   assert.ok(report.health);
   assert.strictEqual(report.health.score, healthScore.overallScore);
@@ -189,13 +242,14 @@ test('generateRecommendations - should generate critical recommendations for low
 test('generateRecommendations - should generate excellent recommendations for high scores', () => {
   const highScoreResults = {
     ...mockAnalysisResults,
-    avgHealthScore: 95,
+    avgFreshnessScore: 95,
+    avgCoverageScore: 95,
     staleCount: 0
   };
   const healthScore = calculateHealthScore(highScoreResults);
   const recommendations = generateRecommendations(healthScore, highScoreResults);
   
-  const hasExcellentRec = recommendations.some(r => 
+  const hasExcellentRec = recommendations.some(r =>
     r.includes('Excellent') || r.includes('Maintain')
   );
   assert.ok(hasExcellentRec, 'Should have excellent recommendations for high scores');

@@ -268,6 +268,115 @@ Coverage: 85%
 
 ---
 
+## ⚙️ Sprint 2: Coverage Analysis & URN Validation
+
+**Duration**: 2025-11-24 to 2025-12-07 (2 weeks)  
+**Status**: Planned  
+**Goal**: Layer coverage detection, URN validation, and enhanced scoring/gap reporting on top of the Sprint 1 freshness pipeline so DocHealth can highlight undocumented surfaces with actionable detail.
+
+### Sprint 2 Overview
+- ✅ Coverage analyzer that cross-references API endpoints, data fields, and workflow nodes against documentation manifests
+- ✅ URN resolver that validates `links.targets` against discoverable protocol elements
+- ✅ Updated health score weighting (Freshness 40% / Coverage 40% / Validation 20%)
+- ✅ Gap reporting surfaced in CLI + JSON output with severity and remediation tips
+
+**Total Estimated**: 24 hours
+
+### Missions
+
+#### M2.1: Implement Coverage Analyzer
+**Type**: Implementation • **Estimate**: 6h • **Priority**: P0 • **Depends on**: M1.3, M1.4  
+**Objective**: Compute coverage metrics per protocol family and flag missing documentation artifacts.
+**Deliverables**:
+- Coverage extraction helpers (new module or analyzer extension) for API/Data/Workflow protocols
+- Severity heuristics for gap classification
+- Unit tests + fixtures representing undocumented endpoints/fields
+**Success Criteria**:
+- Coverage results returned per protocol with section references
+- ≥3 gap categories detected (missing endpoint section, missing data field doc, missing workflow node)
+- Analyzer output feeds reporter without breaking freshness logic
+
+#### M2.2: Build URN Resolver & Link Validator
+**Type**: Implementation • **Estimate**: 5h • **Priority**: P0 • **Depends on**: M2.1  
+**Objective**: Validate cross-protocol URNs and surface broken references.
+**Deliverables**:
+- URN resolver utility + lookup table built from loaded protocols
+- Validation errors with actionable remediation text
+- Test suite covering valid/invalid namespaces, versions, anchors
+**Success Criteria**:
+- `dochealth check` reports invalid URNs with protocol + section references
+- Resolver handles API/Data/Workflow namespaces and is extensible
+- JSON output enumerates broken links for CI consumption
+
+#### M2.3: Enhance Health Scoring with Coverage & Validation
+**Type**: Implementation • **Estimate**: 4h • **Priority**: P0 • **Depends on**: M2.1, M2.2  
+**Objective**: Weight freshness (40%), coverage (40%), validation (20%) and expose detailed metrics.
+**Deliverables**:
+- Updated `calculateHealthScore()` plus config overrides
+- New metrics fields for coverage %, URN health, validation failures
+- Unit tests covering weighting math and thresholds
+**Success Criteria**:
+- CLI shows multi-factor breakdown
+- JSON schema updated with coverage + validation sections
+- Backward compatibility maintained for existing scripts
+
+#### M2.4: Gap Reporting & CLI Output Enhancements
+**Type**: Implementation • **Estimate**: 5h • **Priority**: P0 • **Depends on**: M2.1, M2.2, M2.3  
+**Objective**: Surface gap data (missing docs, invalid URNs) in CLI/JSON reports with severity + recommendations.
+**Deliverables**:
+- Gap sections in CLI and JSON output with toggles (`--gaps/--no-gaps`)
+- Recommendations referencing `dochealth generate` commands where appropriate
+- README updates with sample output/guidance
+**Success Criteria**:
+- Report lists top gaps sorted by severity with URN + file references
+- Recommendations include fix path for each severity band
+- Sample CLI/JSON output checked into docs for onboarding
+
+#### M2.5: Coverage & URN Integration Tests
+**Type**: Implementation • **Estimate**: 4h • **Priority**: P0 • **Depends on**: M2.1–M2.4  
+**Objective**: Add end-to-end tests ensuring coverage + URN regression protection.
+**Deliverables**:
+- Extended fixtures with intentional coverage gaps and URN failures
+- `tests/integration/coverage-and-urn.test.js`
+- c8 coverage report demonstrating ≥80% on new modules
+**Success Criteria**:
+- `npm test` executes new integration suite
+- `dochealth check` against fixture repo returns non-zero exit with descriptive messaging
+- CI instructions updated to include coverage/URN checks
+
+### Sprint 2 Definition of Done
+```bash
+$ node bin/dochealth.js check --json --gaps
+{
+  "health": {
+    "score": 82,
+    "breakdown": {
+      "freshness": 85,
+      "coverage": 78,
+      "validation": 90
+    }
+  },
+  "gaps": {
+    "undocumentedEndpoints": [...],
+    "invalidUrns": [...],
+    "missingWorkflowDocs": [...]
+  }
+}
+
+$ npm test
+✔ coverage analyzer unit tests
+✔ urn resolver unit tests
+✔ coverage+urn integration suite
+Coverage: 82%
+```
+
+**Additional Exit Criteria**
+- Gap report lists severity + recommended follow-up command for every issue
+- URN resolver supports API/Data/Workflow namespaces with extensibility hooks
+- README + docs/roadmap include Sprint 2 feature summary and usage examples
+
+---
+
 ## 🎯 Execution Strategy
 
 ### Week 1: Discovery + Foundation
