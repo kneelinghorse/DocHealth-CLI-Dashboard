@@ -163,13 +163,13 @@ program
       }
 
       if (normalizedType !== 'all' && !SUPPORTED_GENERATORS.includes(normalizedType)) {
-        console.log(chalk.yellow('\n⚠️  Supported generator types: api, data. Workflow support is pending.'));
+        console.log(chalk.yellow('\n⚠️  Supported generator types: api, data, workflow.'));
         if (globalOpts.json) {
           console.log(JSON.stringify({
             type: normalizedType,
             status: 'stub',
             supportedTypes: SUPPORTED_GENERATORS,
-            message: 'Only API and Data generators are implemented in this version'
+            message: 'Supported generators: api, data, workflow'
           }, null, 2));
         }
         process.exit(0);
