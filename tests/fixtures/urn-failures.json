@@ -1,0 +1,84 @@
+{
+  "documentation": {
+    "id": "urn-failures-docs",
+    "title": "Documentation with Broken URN Links",
+    "format": "md",
+    "lifecycle": {
+      "status": "published",
+      "created_at": "2025-11-01T10:00:00Z",
+      "updated_at": "2025-11-01T12:00:00Z"
+    }
+  },
+  "links": {
+    "targets": [
+      "urn:proto:api:nonexistent-api@1.0.0",
+      "urn:proto:data:missing-dataset@2.0.0",
+      "urn:proto:workflow:unknown-workflow@1.0.0",
+      "urn:proto:invalid:bad-namespace@1.0.0",
+      "urn:proto:api:billing@2.1.0"
+    ]
+  },
+  "structure": {
+    "navigation": [
+      {
+        "id": "overview",
+        "title": "Overview",
+        "href": "#overview"
+      },
+      {
+        "id": "related-apis",
+        "title": "Related APIs",
+        "href": "#related-apis"
+      },
+      {
+        "id": "data-sources",
+        "title": "Data Sources",
+        "href": "#data-sources"
+      },
+      {
+        "id": "workflows",
+        "title": "Workflows",
+        "href": "#workflows"
+      }
+    ],
+    "sections": [
+      {
+        "id": "overview",
+        "title": "Overview",
+        "body": "This documentation references several protocols that don't exist or have invalid URNs."
+      },
+      {
+        "id": "related-apis",
+        "title": "Related APIs",
+        "body": "See also: urn:proto:api:nonexistent-api@1.0.0 (this API doesn't exist)"
+      },
+      {
+        "id": "data-sources",
+        "title": "Data Sources",
+        "body": "Data comes from: urn:proto:data:missing-dataset@2.0.0 (dataset not found)"
+      },
+      {
+        "id": "workflows",
+        "title": "Workflows",
+        "body": "Uses workflow: urn:proto:workflow:unknown-workflow@1.0.0 (workflow undefined)"
+      }
+    ]
+  },
+  "maintenance": {
+    "freshness_check": {
+      "enabled": true,
+      "source_code_path": "./src/api_protocol_v_1_1_1.js",
+      "last_code_change_at": "2025-11-10T18:00:00Z"
+    }
+  },
+  "quality": {
+    "docs_health": {
+      "coverage": 45,
+      "missing_sections": ["authentication", "error-handling"]
+    }
+  },
+  "metadata": {
+    "owner": "api-team",
+    "tags": ["api", "broken-links", "urn-failures"]
+  }
+}

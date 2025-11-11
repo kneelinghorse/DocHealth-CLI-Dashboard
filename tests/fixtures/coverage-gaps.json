@@ -1,0 +1,63 @@
+{
+  "documentation": {
+    "id": "coverage-gaps-docs",
+    "title": "Documentation with Severe Coverage Gaps",
+    "format": "md",
+    "lifecycle": {
+      "status": "published",
+      "created_at": "2025-11-01T10:00:00Z",
+      "updated_at": "2025-11-01T12:00:00Z"
+    }
+  },
+  "links": {
+    "targets": [
+      "urn:proto:api:billing@2.1.0",
+      "urn:proto:data:user_events@1.1.1"
+    ]
+  },
+  "structure": {
+    "navigation": [
+      {
+        "id": "overview",
+        "title": "Overview",
+        "href": "#overview"
+      }
+    ],
+    "sections": [
+      {
+        "id": "overview",
+        "title": "Overview",
+        "body": "This documentation has minimal content and severe coverage gaps."
+      }
+    ]
+  },
+  "maintenance": {
+    "freshness_check": {
+      "enabled": true,
+      "source_code_path": "./src/api_protocol_v_1_1_1.js",
+      "last_code_change_at": "2025-11-10T18:00:00Z"
+    }
+  },
+  "quality": {
+    "docs_health": {
+      "coverage": 15,
+      "missing_sections": [
+        "authentication",
+        "authorization",
+        "endpoints",
+        "request-examples",
+        "response-schemas",
+        "error-handling",
+        "rate-limits",
+        "webhooks",
+        "changelog",
+        "troubleshooting",
+        "faq"
+      ]
+    }
+  },
+  "metadata": {
+    "owner": "api-team",
+    "tags": ["api", "poor-coverage", "incomplete"]
+  }
+}

@@ -1,0 +1,67 @@
+{
+  "documentation": {
+    "id": "combined-issues-docs",
+    "title": "Documentation with Multiple Issues",
+    "format": "md",
+    "lifecycle": {
+      "status": "published",
+      "created_at": "2025-09-01T10:00:00Z",
+      "updated_at": "2025-09-01T12:00:00Z"
+    }
+  },
+  "links": {
+    "targets": [
+      "urn:proto:api:nonexistent-api@1.0.0",
+      "urn:proto:data:missing-dataset@2.0.0",
+      "urn:proto:workflow:unknown-workflow@1.0.0",
+      "urn:proto:invalid:bad-namespace@1.0.0",
+      "urn:proto:api:billing@2.1.0"
+    ]
+  },
+  "structure": {
+    "navigation": [
+      {
+        "id": "overview",
+        "title": "Overview",
+        "href": "#overview"
+      }
+    ],
+    "sections": [
+      {
+        "id": "overview",
+        "title": "Overview",
+        "body": "This documentation has multiple issues: stale content, broken URNs, and severe coverage gaps."
+      }
+    ]
+  },
+  "maintenance": {
+    "freshness_check": {
+      "enabled": true,
+      "source_code_path": "./src/api_protocol_v_1_1_1.js",
+      "last_code_change_at": "2025-11-10T18:00:00Z"
+    }
+  },
+  "quality": {
+    "docs_health": {
+      "coverage": 10,
+      "missing_sections": [
+        "authentication",
+        "authorization",
+        "endpoints",
+        "request-examples",
+        "response-schemas",
+        "error-handling",
+        "rate-limits",
+        "webhooks",
+        "changelog",
+        "troubleshooting",
+        "faq",
+        "glossary"
+      ]
+    }
+  },
+  "metadata": {
+    "owner": "api-team",
+    "tags": ["api", "stale", "broken-links", "poor-coverage", "multiple-issues"]
+  }
+}
