@@ -14,6 +14,12 @@ const {
   generateJSONReport,
   getExitCode
 } = require('../lib/reporter');
+const {
+  createProtocolRegistry,
+  validateURNs,
+  generateRemediation,
+  extractURNsFromManifest
+} = require('../lib/urn-resolver');
 
 const program = new Command();
 
@@ -57,8 +63,25 @@ program
       // Extract manifests from loaded protocols
       const manifests = loadResults.protocols.map(p => p.protocol.manifest());
       
+      // Create protocol registry for URN validation
+      const protocolInstances = loadResults.protocols.map(p => p.protocol);
+      const registry = createProtocolRegistry(protocolInstances);
+      
+      // Extract and validate URNs across all protocols
+      const allURNs = [];
+      loadResults.protocols.forEach(p => {
+        const protocolType = p.type;
+        const urns = extractURNsFromManifest(p.protocol.manifest(), protocolType);
+        allURNs.push(...urns);
+      });
+      
+      const urnValidation = validateURNs(allURNs, registry);
+      
       // Analyze all protocols
       const analysisResults = analyzeMultipleProtocols(manifests);
+      
+      // Add URN validation results to analysis
+      analysisResults.urnValidation = urnValidation;
       
       // Calculate health score
       const healthScore = calculateHealthScore(analysisResults);
