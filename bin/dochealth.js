@@ -21,9 +21,11 @@ const {
   extractURNsFromManifest
 } = require('../lib/urn-resolver');
 const { generateAPIReferences } = require('../lib/generators/api-generator');
+const { generateDataCatalogDocs } = require('../lib/generators/data-generator');
 const { createSlug } = require('../lib/generators/helpers');
 
 const program = new Command();
+const SUPPORTED_GENERATORS = ['api', 'data'];
 
 // Global options
 program
@@ -139,6 +141,9 @@ program
   .action(async (type, options) => {
     try {
       const normalizedType = (type || '').toLowerCase();
+      const targetTypes = normalizedType === 'all'
+        ? SUPPORTED_GENERATORS
+        : [normalizedType];
       const resolvedOutput = path.resolve(options.output);
       const globalOpts = program.opts();
       
@@ -156,61 +161,106 @@ program
         });
       }
 
-      if (normalizedType !== 'api') {
-        console.log(chalk.yellow('\n⚠️  Generator available for `api` type only in this sprint.'));
+      if (normalizedType !== 'all' && !SUPPORTED_GENERATORS.includes(normalizedType)) {
+        console.log(chalk.yellow('\n⚠️  Supported generator types: api, data. Workflow support is pending.'));
         if (globalOpts.json) {
           console.log(JSON.stringify({
             type: normalizedType,
             status: 'stub',
-            supportedTypes: ['api'],
-            message: 'Only API generator is implemented in this version'
+            supportedTypes: SUPPORTED_GENERATORS,
+            message: 'Only API and Data generators are implemented in this version'
           }, null, 2));
         }
         process.exit(0);
         return;
       }
-      
+
+      const apiSummaries = [];
+      const dataSummaries = [];
       const apiProtocols = loadResults.protocols.filter(p => p.type === 'api');
-      if (apiProtocols.length === 0) {
-        console.error(chalk.red('❌ No API protocols available for generation'));
-        process.exit(2);
-      }
-      
-      const summaries = [];
-      for (const entry of apiProtocols) {
-        const manifest = entry.protocol.manifest();
-        const generation = await generateAPIReferences(manifest, { format: options.format });
-        const serviceDir = path.join(resolvedOutput, createSlug(generation.serviceSlug || generation.service));
-        await fs.mkdir(serviceDir, { recursive: true });
-        
-        for (const doc of generation.endpoints) {
-          const targetPath = path.join(serviceDir, doc.fileName);
-          await fs.writeFile(targetPath, doc.content, 'utf8');
+      const dataProtocols = loadResults.protocols.filter(p => p.type === 'data');
+
+      if (targetTypes.includes('api')) {
+        if (apiProtocols.length === 0) {
+          console.error(chalk.red('❌ No API protocols available for generation'));
+          if (normalizedType !== 'all') {
+            process.exit(2);
+            return;
+          }
+        } else {
+          for (const entry of apiProtocols) {
+            const manifest = entry.protocol.manifest();
+            const generation = await generateAPIReferences(manifest, { format: options.format });
+            const serviceDir = path.join(resolvedOutput, createSlug(generation.serviceSlug || generation.service));
+            await fs.mkdir(serviceDir, { recursive: true });
+            
+            for (const doc of generation.endpoints) {
+              const targetPath = path.join(serviceDir, doc.fileName);
+              await fs.writeFile(targetPath, doc.content, 'utf8');
+            }
+            
+            apiSummaries.push({
+              service: generation.service,
+              files: generation.endpoints.length,
+              outputDir: serviceDir,
+              performance: generation.performance
+            });
+          }
+          
+          console.log(chalk.green(`\n✅ Generated API reference docs for ${apiSummaries.length} protocol(s).`));
+          apiSummaries.forEach(summary => {
+            console.log(
+              chalk.gray(
+                `  • ${summary.service}: ${summary.files} file(s) → ${summary.outputDir} (benchmark: ${summary.performance.durationMs}ms / ${summary.performance.sampleSize})`
+              )
+            );
+          });
         }
-        
-        summaries.push({
-          service: generation.service,
-          files: generation.endpoints.length,
-          outputDir: serviceDir,
-          performance: generation.performance
-        });
       }
-      
-      console.log(chalk.green(`\n✅ Generated API reference docs for ${summaries.length} protocol(s).`));
-      summaries.forEach(summary => {
-        console.log(
-          chalk.gray(
-            `  • ${summary.service}: ${summary.files} file(s) → ${summary.outputDir} (benchmark: ${summary.performance.durationMs}ms / ${summary.performance.sampleSize})`
-          )
-        );
-      });
+
+      if (targetTypes.includes('data')) {
+        if (dataProtocols.length === 0) {
+          console.error(chalk.red('❌ No data protocols available for generation'));
+          if (normalizedType !== 'all') {
+            process.exit(2);
+            return;
+          }
+        } else {
+          const datasetDir = path.join(resolvedOutput, 'data');
+          await fs.mkdir(datasetDir, { recursive: true });
+
+          for (const entry of dataProtocols) {
+            const manifest = entry.protocol.manifest();
+            const generation = await generateDataCatalogDocs(manifest, { format: options.format });
+            const doc = generation.document;
+            const targetPath = path.join(datasetDir, doc.fileName);
+            await fs.writeFile(targetPath, doc.content, 'utf8');
+            dataSummaries.push({
+              dataset: generation.dataset,
+              file: doc.fileName,
+              outputDir: datasetDir,
+              performance: generation.performance
+            });
+          }
+
+          console.log(chalk.green(`\n✅ Generated data catalog docs for ${dataSummaries.length} dataset(s).`));
+          dataSummaries.forEach(summary => {
+            console.log(
+              chalk.gray(
+                `  • ${summary.dataset}: ${summary.file} → ${summary.outputDir} (benchmark: ${summary.performance.durationMs}ms / ${summary.performance.sampleSize})`
+              )
+            );
+          });
+        }
+      }
       
       if (globalOpts.json) {
         console.log(JSON.stringify({
           type: normalizedType,
           format: options.format,
           output: resolvedOutput,
-          services: summaries
+          api: apiSummaries,
+          data: dataSummaries
         }, null, 2));
       }
       
