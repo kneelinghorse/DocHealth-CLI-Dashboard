@@ -25,8 +25,14 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "chalk": "^4.1.2",
     "commander": "^11.1.0",
-    "chalk": "^4.1.2"
+    "js-yaml": "^4.1.0",
+    "remark-directive": "^4.0.0",
+    "remark-frontmatter": "^5.0.0",
+    "remark-parse": "^11.0.0",
+    "remark-stringify": "^11.0.0",
+    "unified": "^11.0.5"
   },
   "devDependencies": {
     "c8": "^8.0.1",

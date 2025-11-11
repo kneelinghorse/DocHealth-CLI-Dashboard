@@ -20,6 +20,8 @@ const {
   generateRemediation,
   extractURNsFromManifest
 } = require('../lib/urn-resolver');
+const { generateAPIReferences } = require('../lib/generators/api-generator');
+const { createSlug } = require('../lib/generators/helpers');
 
 const program = new Command();
 
@@ -131,30 +133,93 @@ program
   .command('generate')
   .description('Generate documentation from protocols')
   .argument('<type>', 'Documentation type (api, data, workflow, all)')
+  .option('-p, --path <path>', 'Path to protocol manifests', './src')
   .option('-o, --output <path>', 'Output directory', './docs')
   .option('--format <format>', 'Output format (markdown, docusaurus, mkdocs)', 'markdown')
   .action(async (type, options) => {
     try {
-      console.log(chalk.blue(`📄 Generating ${type} documentation...`));
-      console.log(chalk.gray(`Output: ${options.output}`));
+      const normalizedType = (type || '').toLowerCase();
+      const resolvedOutput = path.resolve(options.output);
+      const globalOpts = program.opts();
+      
+      console.log(chalk.blue(`📄 Generating ${normalizedType || 'unknown'} documentation...`));
+      console.log(chalk.gray(`Output: ${resolvedOutput}`));
       console.log(chalk.gray(`Format: ${options.format}`));
       
-      // Placeholder - actual generation logic would go here
-      console.log(chalk.yellow('\n⚠️  Generate command is a stub - implementation pending'));
+      await fs.mkdir(resolvedOutput, { recursive: true });
+      const loadResults = await loadProtocols(options.path);
       
-      if (program.opts().json) {
+      if (loadResults.errors.length > 0) {
+        console.error(chalk.yellow(`⚠️  ${loadResults.errors.length} protocol(s) failed to load during generation`));
+        loadResults.errors.slice(0, 3).forEach(err => {
+          console.error(chalk.gray(`  - ${err.path || 'unknown'}: ${err.message}`));
+        });
+      }
+
+      if (normalizedType !== 'api') {
+        console.log(chalk.yellow('\n⚠️  Generator available for `api` type only in this sprint.'));
+        if (globalOpts.json) {
+          console.log(JSON.stringify({
+            type: normalizedType,
+            status: 'stub',
+            supportedTypes: ['api'],
+            message: 'Only API generator is implemented in this version'
+          }, null, 2));
+        }
+        process.exit(0);
+        return;
+      }
+      
+      const apiProtocols = loadResults.protocols.filter(p => p.type === 'api');
+      if (apiProtocols.length === 0) {
+        console.error(chalk.red('❌ No API protocols available for generation'));
+        process.exit(2);
+      }
+      
+      const summaries = [];
+      for (const entry of apiProtocols) {
+        const manifest = entry.protocol.manifest();
+        const generation = await generateAPIReferences(manifest, { format: options.format });
+        const serviceDir = path.join(resolvedOutput, createSlug(generation.serviceSlug || generation.service));
+        await fs.mkdir(serviceDir, { recursive: true });
+        
+        for (const doc of generation.endpoints) {
+          const targetPath = path.join(serviceDir, doc.fileName);
+          await fs.writeFile(targetPath, doc.content, 'utf8');
+        }
+        
+        summaries.push({
+          service: generation.service,
+          files: generation.endpoints.length,
+          outputDir: serviceDir,
+          performance: generation.performance
+        });
+      }
+      
+      console.log(chalk.green(`\n✅ Generated API reference docs for ${summaries.length} protocol(s).`));
+      summaries.forEach(summary => {
+        console.log(
+          chalk.gray(
+            `  • ${summary.service}: ${summary.files} file(s) → ${summary.outputDir} (benchmark: ${summary.performance.durationMs}ms / ${summary.performance.sampleSize})`
+          )
+        );
+      });
+      
+      if (globalOpts.json) {
         console.log(JSON.stringify({
-          type,
-          output: options.output,
+          type: normalizedType,
           format: options.format,
-          status: 'stub',
-          message: 'Generate command not yet implemented'
+          output: resolvedOutput,
+          services: summaries
         }, null, 2));
       }
       
       process.exit(0);
     } catch (error) {
       console.error(chalk.red('Error generating documentation:'), error.message);
+      if (program.opts().verbose) {
+        console.error(error.stack);
+      }
       process.exit(2);
     }
   });
