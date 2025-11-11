@@ -13,7 +13,8 @@ DocHealth ships with Stage&nbsp;1/Stage&nbsp;2 generators that convert protocol 
 | --- | --- | --- | --- |
 | API | `dochealth generate api` | `<output>/<service-slug>/*.md` | One file per endpoint with YAML frontmatter + `:::generated-section` directive. |
 | Data | `dochealth generate data` | `<output>/data/<dataset-slug>.md` | One file per dataset with semantic section IDs and lineage/governance blocks. |
-| All | `dochealth generate all` | Both of the above | Runs API and Data generators sequentially and reports both summaries. |
+| Workflow | `dochealth generate workflow` | `<output>/workflows/<workflow-slug>.md` | DAG validation + Mermaid diagram generation with ELK layout and semantic anchors. |
+| All | `dochealth generate all` | All supported types | Runs API, Data, and Workflow generators sequentially and reports summaries per type. |
 
 Future workflow/content generators will extend the same pattern—keep this doc updated as new types land.
 
@@ -60,6 +61,41 @@ The command automatically:
 - Each file provides overview, health, schema, keys, lineage, catalog, governance, operations, and data-quality sections—all wrapped in a generated-section directive with semantic anchors such as `dataset-<slug>-schema`.
 - PII columns surface as `🔐` badges inside the schema table and the `data-pii` directive attribute switches to `"true"` when applicable.
 - Reference sample: `docs/examples/data-catalog-sample.md`.
+
+### Workflow Generator
+
+- Each workflow document contains overview metadata, validation notes, and a Mermaid + ELK diagram wrapped in a generated-section.
+- Cycle detection (Kahn’s Algorithm) runs before rendering. If a cycle or missing dependency is encountered, the generator emits a `:::danger` block instead of Mermaid output.
+- Node styling is driven by step type (`service`, `human`, `event`, `decision`, etc.) and phases are rendered as Mermaid subgraphs for readability.
+- Refer to the 60-node reference output in `docs/examples/workflow-diagram-sample.md` for large topology expectations.
+
+#### Docusaurus Configuration for ELK
+
+Install the required plugins:
+
+```bash
+npm install @docusaurus/theme-mermaid @mermaid-js/layout-elk
+```
+
+Enable Mermaid + ELK in `docusaurus.config.js`:
+
+```js
+export default {
+  markdown: {
+    mermaid: true,
+  },
+  themes: [
+    ['@docusaurus/theme-mermaid', {
+      options: {
+        maxEdges: 5000,
+        maxTextSize: 10000000,
+      },
+    }],
+  ],
+};
+```
+
+Every workflow diagram automatically prepends `%%{init: {"layout": "elk", "elk": {"nodePlacementStrategy": "NETWORK_SIMPLEX", "mergeEdges": true}}}%%`, so no extra per-file configuration is required once Mermaid is enabled.
 
 ### JSON Summaries
 

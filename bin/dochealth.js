@@ -22,10 +22,11 @@ const {
 } = require('../lib/urn-resolver');
 const { generateAPIReferences } = require('../lib/generators/api-generator');
 const { generateDataCatalogDocs } = require('../lib/generators/data-generator');
+const { generateWorkflowDocs } = require('../lib/generators/workflow-generator');
 const { createSlug } = require('../lib/generators/helpers');
 
 const program = new Command();
-const SUPPORTED_GENERATORS = ['api', 'data'];
+const SUPPORTED_GENERATORS = ['api', 'data', 'workflow'];
 
 // Global options
 program
@@ -179,6 +180,7 @@ program
       const dataSummaries = [];
       const apiProtocols = loadResults.protocols.filter(p => p.type === 'api');
       const dataProtocols = loadResults.protocols.filter(p => p.type === 'data');
+      const workflowProtocols = loadResults.protocols.filter(p => p.type === 'workflow');
 
       if (targetTypes.includes('api')) {
         if (apiProtocols.length === 0) {
@@ -253,6 +255,43 @@ program
           });
         }
       }
+
+      const workflowSummaries = [];
+      if (targetTypes.includes('workflow')) {
+        if (workflowProtocols.length === 0) {
+          console.error(chalk.red('❌ No workflow protocols available for generation'));
+          if (normalizedType !== 'all') {
+            process.exit(2);
+            return;
+          }
+        } else {
+          const workflowDir = path.join(resolvedOutput, 'workflows');
+          await fs.mkdir(workflowDir, { recursive: true });
+
+          for (const entry of workflowProtocols) {
+            const manifest = entry.protocol.manifest();
+            const generation = await generateWorkflowDocs(manifest, { format: options.format });
+            const doc = generation.document;
+            const targetPath = path.join(workflowDir, doc.fileName);
+            await fs.writeFile(targetPath, doc.content, 'utf8');
+            workflowSummaries.push({
+              workflow: generation.workflow,
+              file: doc.fileName,
+              outputDir: workflowDir,
+              performance: generation.performance
+            });
+          }
+
+          console.log(chalk.green(`\n✅ Generated workflow diagrams for ${workflowSummaries.length} protocol(s).`));
+          workflowSummaries.forEach(summary => {
+            console.log(
+              chalk.gray(
+                `  • ${summary.workflow}: ${summary.file} → ${summary.outputDir} (benchmark: ${summary.performance.durationMs}ms / ${summary.performance.sampleSize})`
+              )
+            );
+          });
+        }
+      }
       
       if (globalOpts.json) {
         console.log(JSON.stringify({
@@ -260,7 +299,8 @@ program
           format: options.format,
           output: resolvedOutput,
           api: apiSummaries,
-          data: dataSummaries
+          data: dataSummaries,
+          workflow: workflowSummaries
         }, null, 2));
       }
       
