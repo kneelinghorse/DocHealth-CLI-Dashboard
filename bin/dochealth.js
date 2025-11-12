@@ -24,6 +24,8 @@ const { generateAPIReferences } = require('../lib/generators/api-generator');
 const { generateDataCatalogDocs } = require('../lib/generators/data-generator');
 const { generateWorkflowDocs } = require('../lib/generators/workflow-generator');
 const { createSlug } = require('../lib/generators/helpers');
+const { registerMergeDocsCommand } = require('./commands/merge-docs');
+const { registerResolveCommand } = require('./commands/resolve');
 
 const program = new Command();
 const SUPPORTED_GENERATORS = ['api', 'data', 'workflow'];
@@ -415,6 +417,9 @@ program
       process.exit(2);
     }
   });
+
+registerMergeDocsCommand(program);
+registerResolveCommand(program);
 
 // Parse command line arguments
 program.parse();
