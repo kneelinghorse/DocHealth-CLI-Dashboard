@@ -24,16 +24,19 @@ DocHealth is a developer-first documentation health monitoring and auto-generati
 ## Quick Start
 
 ```bash
-# Install dependencies (when implemented)
+# Install dependencies
 npm install
 
-# Run health check on your protocols
-node bin/dochealth.js check
+# Run a health check across ./src protocols
+node bin/dochealth.js check --path ./src
 
-# Generate API documentation
-node bin/dochealth.js generate api --output docs/api-reference.md
+# Generate API docs (preserves edits via AST merge)
+node bin/dochealth.js generate api --path ./src --output ./docs/generated --merge
 
-# View detailed report as JSON
+# First run and want a clean overwrite?
+node bin/dochealth.js generate api --path ./src --output ./docs/generated --no-merge
+
+# Emit structured output for CI pipelines
 node bin/dochealth.js check --json > health-report.json
 ```
 
@@ -41,25 +44,27 @@ node bin/dochealth.js check --json > health-report.json
 
 ## Project Status
 
-**Current Phase:** Sprint 1 - CLI Core & Freshness Detection
+**Current Phase:** Sprint 3 - Generator Integration & CLI Commands
 
 ### Completed ✅
 - [x] Viability assessment and research
 - [x] CMOS setup and initialization
 - [x] Project roadmap and technical architecture
 - [x] Protocol infrastructure (src/) - 70% of foundation
+- [x] CLI scaffold, protocol loader, analyzers, and reporters
+- [x] URN resolver plus semantic merge tooling
+- [x] API/Data/Workflow generators with Stage 1/Stage 2 pipelines
+- [x] `dochealth generate` command with auto-merge + performance tests
 
 ### In Progress 🚧
-- [ ] CLI scaffold (bin/dochealth.js)
-- [ ] Protocol loader (lib/loader.js)
-- [ ] Freshness analyzer (lib/analyzer.js)
-- [ ] Health reporter (lib/reporter.js)
+- [ ] Hardening generator pipeline benchmarks and docs
+- [ ] Usage documentation + examples for regeneration workflows
+- [ ] Dashboard planning (Sprint 4)
 
 ### Upcoming 📋
-- [ ] Coverage analyzer
-- [ ] URN resolver
-- [ ] Documentation generator
-- [ ] Web dashboard
+- [ ] Dashboard & monitoring surfaces
+- [ ] Continuous freshness daemons
+- [ ] SME routing & alerting
 
 ---
 
@@ -90,6 +95,8 @@ See [docs/technical_architecture.md](docs/technical_architecture.md) for full ar
 
 - **[Roadmap](docs/roadmap.md)** - Product vision, sprints, and success metrics
 - **[Technical Architecture](docs/technical_architecture.md)** - System design, APIs, and data models
+- **[Generator Usage Guide](docs/usage-guide.md)** - CLI flags, merge behavior, and sample outputs
+- **[Examples](docs/examples/)** - Snapshot Markdown from the generators
 - **[Viability Assessment](VIABILITY_ASSESSMENT.md)** - Market validation and business case
 - **[CMOS Documentation](cmos/docs/)** - Project management system guides
 
@@ -99,18 +106,29 @@ See [docs/technical_architecture.md](docs/technical_architecture.md) for full ar
 
 ```
 DocHealth CLI & Dashboard/
-├── bin/                   # CLI entry points (to be created)
-├── lib/                   # Core analysis engine (to be created)
-├── src/                   # Protocol implementations (existing, ~70% built)
+├── bin/                   # CLI entry + sub-commands (generate, merge, resolve)
+│   ├── dochealth.js
+│   └── commands/
+├── lib/                   # Core analysis engine + generator pipeline
+│   ├── loader.js
+│   ├── analyzer.js
+│   ├── generator-pipeline.js
+│   └── generators/
+├── src/                   # Protocol specifications (70% of infrastructure)
 │   ├── api_protocol_v_1_1_1.js
 │   ├── data_protocol_v_1_1_1.js
 │   ├── Documentation Protocol — v1.1.1.js
 │   ├── workflow_protocol_v_1_1_1.js
 │   └── Semantic Protocol — v3.2.0.js
-├── tests/                 # Application tests (to be created)
-├── docs/                  # Project documentation
+├── tests/                 # Unit, integration, and performance suites
+│   ├── integration/
+│   ├── performance/
+│   └── unit/
+├── docs/                  # Project docs + user-facing guides/examples
 │   ├── roadmap.md
-│   └── technical_architecture.md
+│   ├── technical_architecture.md
+│   ├── usage-guide.md
+│   └── examples/
 ├── cmos/                  # CMOS project management (separate!)
 │   ├── agents.md          # CMOS operational instructions
 │   ├── db/                # SQLite mission tracking
