@@ -65,6 +65,7 @@ program
 
       // Extract manifests from loaded protocols
       const manifests = loadResults.protocols.map(p => p.protocol.manifest());
+      const protocolTypes = loadResults.protocols.map(p => p.type);
       
       // Create protocol registry for URN validation
       const protocolInstances = loadResults.protocols.map(p => p.protocol);
@@ -81,7 +82,7 @@ program
       const urnValidation = validateURNs(allURNs, registry);
       
       // Analyze all protocols
-      const analysisResults = analyzeMultipleProtocols(manifests);
+      const analysisResults = analyzeMultipleProtocols(manifests, protocolTypes);
       
       // Add URN validation results to analysis
       analysisResults.urnValidation = urnValidation;
