@@ -9,6 +9,7 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './src/setupTests.js',
     include: ['tests/**/*.test.{js,jsx}'],
+    environmentMatchGlobs: [['tests/server/**/*.test.{js,ts}', 'node']],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
