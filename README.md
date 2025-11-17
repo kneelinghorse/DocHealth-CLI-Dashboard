@@ -231,6 +231,8 @@ node bin/dochealth.js pr-comment \
   --pr 123 \
   --after-report ./head-report.json \
   --dry-run
+
+See `docs/github-pr-integration.md` for a complete GitHub App setup guide, workflow wiring instructions, and troubleshooting tips.
 ```
 
 ### Configuration

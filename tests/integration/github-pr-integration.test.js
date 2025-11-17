@@ -82,6 +82,58 @@ function createStubOctokit({ comments = [] } = {}) {
   };
 }
 
+function createAuthFailureOctokit(error) {
+  return {
+    rest: {
+      pulls: {
+        get: async () => {
+          throw error;
+        }
+      },
+      issues: {
+        listComments: async () => ({ data: [] }),
+        updateComment: async () => ({ data: {} }),
+        createComment: async () => ({ data: {} })
+      }
+    },
+    paginate: async fn => {
+      const response = await fn();
+      return response.data;
+    }
+  };
+}
+
+function createRateLimitOctokit(error) {
+  return {
+    rest: {
+      pulls: {
+        get: async () => ({
+          data: {
+            html_url: 'https://github.com/acme/dochealth/pull/10',
+            base: { sha: '1111111', ref: 'main' },
+            head: { sha: '2222222', ref: 'feature/pr' }
+          }
+        })
+      },
+      issues: {
+        listComments: async () => ({ data: [] }),
+        updateComment: async () => ({ data: {} }),
+        createComment: async () => {
+          throw error;
+        }
+      }
+    },
+    paginate: async fn => {
+      const response = await fn();
+      return response.data;
+    }
+  };
+}
+
+function createTempReportsFixture() {
+  return createTempDir();
+}
+
 test('calculateHealthDelta detects new and resolved issues', () => {
   const beforeReport = buildReport({
     score: 70,
@@ -186,6 +238,90 @@ test('runPRCommentWorkflow updates an existing sticky comment', async () => {
     assert.equal(result.comment.action, 'updated');
     assert.equal(octokit.calls.updated, 1);
     assert.equal(result.delta.issues.resolvedIssues.length, 1);
+  } finally {
+    await fs.rm(tempDir, { recursive: true, force: true });
+  }
+});
+
+test('runPRCommentWorkflow supports offline dry-run metadata overrides', async () => {
+  const tempDir = await createTempDir();
+  try {
+    const beforeReport = buildReport({ score: 68, protocols: [] });
+    const afterReport = buildReport({ score: 72, protocols: [] });
+
+    const beforePath = await writeReport(tempDir, 'before.json', beforeReport);
+    const afterPath = await writeReport(tempDir, 'after.json', afterReport);
+
+    const result = await runPRCommentWorkflow({
+      repo: 'acme/dochealth',
+      prNumber: 8,
+      beforeReportPath: beforePath,
+      afterReportPath: afterPath,
+      dryRun: true,
+      baseSha: 'aaaaaaaa',
+      headSha: 'bbbbbbbb',
+      baseRef: 'main',
+      headRef: 'feature/github-pr-docs',
+      pullRequestUrl: 'https://github.com/acme/dochealth/pull/8'
+    });
+
+    assert.equal(result.dryRun, true);
+    assert.equal(result.pullRequest.base.sha, 'aaaaaaaa');
+    assert.equal(result.pullRequest.head.sha, 'bbbbbbbb');
+    assert.match(result.commentBody, /DocHealth Health Delta/);
+  } finally {
+    await fs.rm(tempDir, { recursive: true, force: true });
+  }
+});
+
+test('runPRCommentWorkflow surfaces authentication failures with actionable hints', async () => {
+  const tempDir = await createTempDir();
+  try {
+    const afterReport = buildReport({ score: 70, protocols: [] });
+    const afterPath = await writeReport(tempDir, 'after.json', afterReport);
+
+    const authError = new Error('Bad credentials');
+    authError.status = 401;
+    const octokit = createAuthFailureOctokit(authError);
+
+    await assert.rejects(
+      runPRCommentWorkflow({
+        repo: 'acme/dochealth',
+        prNumber: 2,
+        afterReportPath: afterPath,
+        beforeReportPath: null,
+        octokit
+      }),
+      /GitHub authentication failed/i
+    );
+  } finally {
+    await fs.rm(tempDir, { recursive: true, force: true });
+  }
+});
+
+test('runPRCommentWorkflow highlights rate limit failures when posting comments', async () => {
+  const tempDir = await createTempDir();
+  try {
+    const beforeReport = buildReport({ score: 70, protocols: [] });
+    const afterReport = buildReport({ score: 72, protocols: [] });
+    const beforePath = await writeReport(tempDir, 'before.json', beforeReport);
+    const afterPath = await writeReport(tempDir, 'after.json', afterReport);
+
+    const rateError = new Error('API rate limit exceeded');
+    rateError.status = 403;
+    const octokit = createRateLimitOctokit(rateError);
+
+    await assert.rejects(
+      runPRCommentWorkflow({
+        repo: 'acme/dochealth',
+        prNumber: 4,
+        beforeReportPath: beforePath,
+        afterReportPath: afterPath,
+        identifier: COMMENT_IDENTIFIER,
+        octokit
+      }),
+      /rate limit/i
+    );
   } finally {
     await fs.rm(tempDir, { recursive: true, force: true });
   }
