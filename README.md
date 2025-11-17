@@ -170,7 +170,14 @@ node bin/dochealth.js check --path ./src --json > report.json
 
 # Custom protocol directory
 node bin/dochealth.js check --path ./protocols --config ./custom.config.js
+
+# Persist results to the dashboard database (optional path override)
+node bin/dochealth.js check --write-db
+node bin/dochealth.js check --write-db ./tmp/dochealth.sqlite
+
 ```
+
+When no path is provided, DocHealth writes to `dashboard/server/data/dochealth.sqlite`, mirroring the database the dashboard API consumes. Provide an explicit path when running the CLI outside the project root or when testing against a disposable database file.
 
 #### Documentation Generation
 
