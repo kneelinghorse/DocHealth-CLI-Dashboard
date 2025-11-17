@@ -16,6 +16,11 @@ function registerPRCommentCommand(program) {
     .option('--private-key-path <path>', 'Path to GitHub App private key PEM file')
     .option('--private-key <pem>', 'Inline GitHub App private key (use with caution)')
     .option('--identifier <marker>', 'Sticky comment identifier', COMMENT_IDENTIFIER)
+    .option('--base-sha <sha>', 'Override base commit SHA (enables offline dry run)')
+    .option('--base-ref <ref>', 'Optional base ref label for reporting')
+    .option('--head-sha <sha>', 'Override head commit SHA (enables offline dry run)')
+    .option('--head-ref <ref>', 'Optional head ref label for reporting')
+    .option('--pr-url <url>', 'Override pull request URL in dry-run output')
     .option('--dry-run', 'Skip posting to GitHub and print the comment body')
     .action(async options => {
       const globalOpts = program.opts();
@@ -43,7 +48,12 @@ function registerPRCommentCommand(program) {
           privateKeyPath: options.privateKeyPath,
           privateKey: options.privateKey,
           dryRun: Boolean(options.dryRun),
-          identifier: options.identifier
+          identifier: options.identifier,
+          baseSha: options.baseSha,
+          baseRef: options.baseRef,
+          headSha: options.headSha,
+          headRef: options.headRef,
+          pullRequestUrl: options.prUrl
         });
 
         if (options.dryRun) {
