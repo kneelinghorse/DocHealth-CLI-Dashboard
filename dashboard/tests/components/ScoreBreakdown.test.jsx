@@ -30,4 +30,9 @@ describe('ScoreBreakdown', () => {
     render(<ScoreBreakdown loading={false} breakdown={[]} error={new Error('nope')} />)
     expect(screen.getByRole('alert')).toHaveTextContent('Unable to load breakdown')
   })
+
+  test('renders empty state when there is no breakdown data', () => {
+    render(<ScoreBreakdown loading={false} breakdown={[]} error={null} />)
+    expect(screen.getByText(/No breakdown data/i)).toBeInTheDocument()
+  })
 })

@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import Card from '../components/common/Card.jsx'
 import Button from '../components/common/Button.jsx'
+import EmptyState from '../components/common/EmptyState.jsx'
+import ErrorDisplay from '../components/common/ErrorDisplay.jsx'
+import LoadingState from '../components/common/LoadingState.jsx'
 import ProtocolFilter from '../components/insights/ProtocolFilter.jsx'
 import StaleDocsList from '../components/insights/StaleDocsList.jsx'
 import StaleDocDetail from '../components/insights/StaleDocDetail.jsx'
@@ -85,9 +88,29 @@ const StaleDocs = () => {
         }
       >
         {loading ? (
-          <p role="status">Loading stale protocols…</p>
+          <LoadingState
+            variant="skeleton"
+            label="Loading stale protocols"
+            description="Scanning protocol manifests..."
+            fullWidth
+          />
         ) : error ? (
-          <p role="alert">Unable to load stale documentation: {error.message}</p>
+          <ErrorDisplay
+            title="Unable to load stale documentation"
+            message="The dashboard could not fetch the latest stale protocols."
+            error={error}
+            onRetry={refetch}
+          />
+        ) : !items.length ? (
+          <EmptyState
+            title="No stale documentation detected"
+            description="All monitored protocols are up to date."
+            action={
+              <Button variant="ghost" size="sm" onClick={refetch}>
+                Refresh data
+              </Button>
+            }
+          />
         ) : (
           <>
             <div className="insights-toolbar">

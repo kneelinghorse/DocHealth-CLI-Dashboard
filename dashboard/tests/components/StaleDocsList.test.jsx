@@ -27,6 +27,6 @@ describe('StaleDocsList', () => {
 
   test('shows empty message when no items are present', () => {
     render(<StaleDocsList items={[]} />)
-    expect(screen.getByText(/No stale protocols/i)).toBeInTheDocument()
+    expect(screen.getByText(/No stale protocols match the current filters/i)).toBeInTheDocument()
   })
 })

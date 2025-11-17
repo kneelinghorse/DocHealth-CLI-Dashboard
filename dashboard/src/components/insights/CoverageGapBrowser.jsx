@@ -1,3 +1,5 @@
+import EmptyState from '../common/EmptyState.jsx'
+
 const formatCoverage = (percentage) => {
   if (percentage === null || percentage === undefined) {
     return 'Unknown'
@@ -7,7 +9,12 @@ const formatCoverage = (percentage) => {
 
 const CoverageGapBrowser = ({ gaps = [], selectedId, onSelect }) => {
   if (!gaps.length) {
-    return <p className="empty-state">No coverage gaps detected.</p>
+    return (
+      <EmptyState
+        title="No coverage gaps match the current filters"
+        description="Adjust the filters or search criteria to continue auditing."
+      />
+    )
   }
 
   const handleKeyDown = (event, id) => {
@@ -18,8 +25,9 @@ const CoverageGapBrowser = ({ gaps = [], selectedId, onSelect }) => {
   }
 
   return (
-    <div className="insights-table-wrapper">
+    <div className="insights-table-wrapper" role="region" aria-label="Coverage gap results" aria-live="polite">
       <table className="insights-table">
+        <caption className="visually-hidden">Coverage gaps detected by DocHealth</caption>
         <thead>
           <tr>
             <th scope="col">Protocol</th>

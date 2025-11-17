@@ -1,10 +1,17 @@
+import EmptyState from '../common/EmptyState.jsx'
+
 const CoverageGapDetail = ({ gap }) => {
   if (!gap) {
-    return <p className="detail-panel__empty">Select a coverage gap to inspect missing artifacts.</p>
+    return (
+      <EmptyState
+        title="Select a coverage gap"
+        description="Choose a gap from the table to inspect missing documentation."
+      />
+    )
   }
 
   return (
-    <div className="detail-panel">
+    <div className="detail-panel" role="region" aria-live="polite" aria-label="Coverage gap details">
       <div className="detail-panel__header">
         <div>
           <p className="eyebrow">Coverage gap</p>

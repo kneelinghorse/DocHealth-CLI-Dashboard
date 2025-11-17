@@ -1,3 +1,5 @@
+import EmptyState from '../common/EmptyState.jsx'
+
 const formatDate = (value) => {
   if (!value) return 'Unknown'
   const date = new Date(value)
@@ -21,7 +23,12 @@ const severityClass = (severity) => `severity-badge severity-badge--${severity ?
 
 const StaleDocsList = ({ items = [], selectedId, onSelect }) => {
   if (!items.length) {
-    return <p className="empty-state">No stale protocols match the current filters.</p>
+    return (
+      <EmptyState
+        title="No stale protocols match the current filters"
+        description="Adjust the filters or search query to see other protocols."
+      />
+    )
   }
 
   const handleKeyDown = (event, id) => {
@@ -32,8 +39,9 @@ const StaleDocsList = ({ items = [], selectedId, onSelect }) => {
   }
 
   return (
-    <div className="insights-table-wrapper">
+    <div className="insights-table-wrapper" role="region" aria-live="polite" aria-label="Stale protocols results">
       <table className="insights-table">
+        <caption className="visually-hidden">Protocols requiring documentation updates</caption>
         <thead>
           <tr>
             <th scope="col">Protocol</th>
