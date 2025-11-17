@@ -1,3 +1,5 @@
+import EmptyState from '../common/EmptyState.jsx'
+
 const formatDateTime = (value) => {
   if (!value) return 'Unknown'
   const date = new Date(value)
@@ -6,11 +8,16 @@ const formatDateTime = (value) => {
 
 const StaleDocDetail = ({ item }) => {
   if (!item) {
-    return <p className="detail-panel__empty">Select a protocol to view drill-down details.</p>
+    return (
+      <EmptyState
+        title="Select a protocol"
+        description="Choose a stale protocol from the list to view detailed timestamps."
+      />
+    )
   }
 
   return (
-    <div className="detail-panel">
+    <div className="detail-panel" role="region" aria-live="polite" aria-label="Stale protocol details">
       <div className="detail-panel__header">
         <div>
           <p className="eyebrow">Protocol</p>

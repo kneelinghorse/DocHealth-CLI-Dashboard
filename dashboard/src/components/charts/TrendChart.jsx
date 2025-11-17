@@ -1,25 +1,44 @@
 import { ResponsiveLine } from '@nivo/line'
+import EmptyState from '../common/EmptyState.jsx'
+import ErrorDisplay from '../common/ErrorDisplay.jsx'
+import LoadingState from '../common/LoadingState.jsx'
 
 const TrendChart = ({ series, loading = false, error = null }) => {
   if (loading) {
     return (
-      <div className="chart-panel" role="status" aria-live="polite">
-        Loading history…
+      <div className="chart-panel">
+        <LoadingState
+          variant="skeleton"
+          label="Loading history"
+          description="Fetching recent runs..."
+          fullWidth
+        />
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="chart-panel" role="alert">
-        Failed to load history: {error.message}
+      <div className="chart-panel">
+        <ErrorDisplay
+          title="Unable to load history"
+          message="We couldn't retrieve the recent runs."
+          error={error}
+        />
       </div>
     )
   }
 
   const hasData = Array.isArray(series) && series.some((item) => item.data?.length)
   if (!hasData) {
-    return <div className="chart-panel empty-state">No history available yet.</div>
+    return (
+      <div className="chart-panel">
+        <EmptyState
+          title="No history available"
+          description="Run dochealth check multiple times to build a trend."
+        />
+      </div>
+    )
   }
 
   return (

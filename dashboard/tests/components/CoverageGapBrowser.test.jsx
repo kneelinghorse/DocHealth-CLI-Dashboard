@@ -25,6 +25,6 @@ describe('CoverageGapBrowser', () => {
 
   test('shows empty state when gaps are missing', () => {
     render(<CoverageGapBrowser gaps={[]} />)
-    expect(screen.getByText(/No coverage gaps/i)).toBeInTheDocument()
+    expect(screen.getByText(/No coverage gaps match the current filters/i)).toBeInTheDocument()
   })
 })

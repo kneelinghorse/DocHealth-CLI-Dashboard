@@ -1,4 +1,7 @@
 import { ResponsiveBar } from '@nivo/bar'
+import EmptyState from '../common/EmptyState.jsx'
+import ErrorDisplay from '../common/ErrorDisplay.jsx'
+import LoadingState from '../common/LoadingState.jsx'
 
 const shapeBreakdownData = (breakdown = []) =>
   breakdown.map((item) => ({
@@ -10,16 +13,25 @@ const shapeBreakdownData = (breakdown = []) =>
 const ScoreBreakdown = ({ breakdown, loading = false, error = null }) => {
   if (loading) {
     return (
-      <div className="chart-panel" role="status" aria-live="polite">
-        Loading breakdown…
+      <div className="chart-panel">
+        <LoadingState
+          variant="skeleton"
+          label="Loading breakdown"
+          description="Gathering score weights..."
+          fullWidth
+        />
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="chart-panel" role="alert">
-        Unable to load breakdown: {error.message}
+      <div className="chart-panel">
+        <ErrorDisplay
+          title="Unable to load breakdown"
+          message="Score components failed to load."
+          error={error}
+        />
       </div>
     )
   }
@@ -28,7 +40,14 @@ const ScoreBreakdown = ({ breakdown, loading = false, error = null }) => {
   const hasData = data.length && data.every((item) => Number.isFinite(item.score))
 
   if (!hasData) {
-    return <div className="chart-panel empty-state">No breakdown data available.</div>
+    return (
+      <div className="chart-panel">
+        <EmptyState
+          title="No breakdown data"
+          description="Once CLI results are available, we'll show the component scores here."
+        />
+      </div>
+    )
   }
 
   return (

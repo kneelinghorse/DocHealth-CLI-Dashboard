@@ -1,5 +1,8 @@
 import Card from '../common/Card.jsx'
 import Button from '../common/Button.jsx'
+import EmptyState from '../common/EmptyState.jsx'
+import ErrorDisplay from '../common/ErrorDisplay.jsx'
+import LoadingState from '../common/LoadingState.jsx'
 import StatusIndicator from './StatusIndicator.jsx'
 
 const formatTimestamp = (value) => {
@@ -28,9 +31,12 @@ const HealthScoreDashboard = ({ data, loading, error, onRefresh }) => {
   if (loading) {
     return (
       <Card title="Documentation Health" subtitle="Latest CLI analysis run" actions={actions}>
-        <p role="status" aria-live="polite">
-          Loading health score…
-        </p>
+        <LoadingState
+          variant="skeleton"
+          label="Loading health score"
+          description="Fetching the latest CLI run."
+          fullWidth
+        />
       </Card>
     )
   }
@@ -38,12 +44,12 @@ const HealthScoreDashboard = ({ data, loading, error, onRefresh }) => {
   if (error) {
     return (
       <Card title="Documentation Health" subtitle="Latest CLI analysis run" actions={actions}>
-        <p role="alert">Unable to load health score: {error.message}</p>
-        {onRefresh ? (
-          <Button variant="ghost" size="sm" onClick={onRefresh}>
-            Try again
-          </Button>
-        ) : null}
+        <ErrorDisplay
+          title="Unable to load health score"
+          message="We couldn't retrieve the current run."
+          error={error}
+          onRetry={onRefresh}
+        />
       </Card>
     )
   }
@@ -51,7 +57,17 @@ const HealthScoreDashboard = ({ data, loading, error, onRefresh }) => {
   if (!data) {
     return (
       <Card title="Documentation Health" subtitle="Latest CLI analysis run" actions={actions}>
-        <p>No health runs have been recorded yet.</p>
+        <EmptyState
+          title="No health runs yet"
+          description="Run `dochealth check --persist` to publish a baseline."
+          action={
+            onRefresh ? (
+              <Button variant="ghost" size="sm" onClick={onRefresh}>
+                Check again
+              </Button>
+            ) : null
+          }
+        />
       </Card>
     )
   }

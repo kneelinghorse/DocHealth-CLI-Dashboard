@@ -1,5 +1,7 @@
 import { Outlet } from 'react-router-dom'
 import Button from '../common/Button.jsx'
+import ErrorBoundary from '../common/ErrorBoundary.jsx'
+import ErrorDisplay from '../common/ErrorDisplay.jsx'
 import Navigation from './Navigation.jsx'
 
 /**
@@ -24,7 +26,19 @@ const AppLayout = () => (
         </div>
       </header>
       <section className="app-shell__content">
-        <Outlet />
+        <ErrorBoundary
+          fallbackRender={({ error, resetErrorBoundary }) => (
+            <ErrorDisplay
+              title="We couldn't render this view"
+              message="Please reload the section or try again in a few moments."
+              error={error}
+              onRetry={resetErrorBoundary}
+              actionLabel="Reload"
+            />
+          )}
+        >
+          <Outlet />
+        </ErrorBoundary>
       </section>
     </main>
   </div>

@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import Card from '../components/common/Card.jsx'
 import Button from '../components/common/Button.jsx'
+import EmptyState from '../components/common/EmptyState.jsx'
+import ErrorDisplay from '../components/common/ErrorDisplay.jsx'
+import LoadingState from '../components/common/LoadingState.jsx'
 import ProtocolFilter from '../components/insights/ProtocolFilter.jsx'
 import CoverageGapBrowser from '../components/insights/CoverageGapBrowser.jsx'
 import CoverageGapDetail from '../components/insights/CoverageGapDetail.jsx'
@@ -86,9 +89,29 @@ const CoverageGaps = () => {
         }
       >
         {loading ? (
-          <p role="status">Loading coverage gaps…</p>
+          <LoadingState
+            variant="skeleton"
+            label="Loading coverage gaps"
+            description="Analyzing coverage metrics..."
+            fullWidth
+          />
         ) : error ? (
-          <p role="alert">Unable to load coverage data: {error.message}</p>
+          <ErrorDisplay
+            title="Unable to load coverage data"
+            message="We couldn't retrieve the coverage gaps."
+            error={error}
+            onRetry={refetch}
+          />
+        ) : !gaps.length ? (
+          <EmptyState
+            title="No coverage gaps detected"
+            description="Documentation covers all monitored references."
+            action={
+              <Button variant="ghost" size="sm" onClick={refetch}>
+                Refresh data
+              </Button>
+            }
+          />
         ) : (
           <>
             <div className="insights-toolbar">

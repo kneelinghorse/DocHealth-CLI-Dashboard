@@ -46,4 +46,9 @@ describe('HealthScoreDashboard', () => {
     fireEvent.click(screen.getByRole('button', { name: /Try again/i }))
     expect(onRefresh).toHaveBeenCalled()
   })
+
+  test('shows empty state when no data has been recorded', () => {
+    render(<HealthScoreDashboard loading={false} data={null} error={null} />)
+    expect(screen.getByText(/No health runs yet/i)).toBeInTheDocument()
+  })
 })
