@@ -7,7 +7,6 @@ import {
   createProtocolRegistry,
   validateURNs,
   generateRemediation,
-  URN_PATTERN,
   VALID_NAMESPACES
 } from '../../lib/urn-resolver.js';
 

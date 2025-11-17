@@ -10,7 +10,6 @@ const fs = require('fs').promises;
 const chalk = require('chalk');
 
 // Import core modules
-const { loadProtocol } = require('../lib/loader');
 const { analyzeMultipleProtocols } = require('../lib/analyzer');
 const {
   calculateHealthScore,

@@ -1,6 +1,6 @@
 {
   "name": "dochealth",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "A protocol-driven documentation orchestration tool that uses protocol manifests as the single source of truth to auto-generate documentation, monitor freshness, validate completeness, and route SME reviews intelligently.",
   "main": "bin/dochealth.js",
   "bin": {
@@ -10,7 +10,7 @@
     "test": "node --test tests/**/*.test.js",
     "test:unit": "node --test tests/unit/**/*.test.js",
     "test:integration": "node --test tests/integration/**/*.test.js",
-    "test:coverage": "c8 --reporter=text --reporter=html npm test",
+    "test:coverage": "c8 --reporter=text --reporter=html --exclude=src/** npm test",
     "lint": "eslint lib/ bin/ tests/",
     "format": "prettier --write \"**/*.js\"",
     "type-check": "echo \"No TypeScript configured yet\""
@@ -20,16 +20,25 @@
     "cli",
     "protocol",
     "health-check",
-    "api-docs"
+    "api-docs",
+    "dochealth"
   ],
-  "author": "",
+  "author": "DocHealth Core Team <maintainers@dochealth.dev>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kneelinghorse/DocHealth-CLI-Dashboard.git"
+  },
+  "homepage": "https://github.com/kneelinghorse/DocHealth-CLI-Dashboard#readme",
+  "bugs": {
+    "url": "https://github.com/kneelinghorse/DocHealth-CLI-Dashboard/issues"
+  },
   "dependencies": {
     "@octokit/plugin-retry": "^8.0.3",
     "@octokit/plugin-throttling": "^11.0.3",
     "chalk": "^4.1.2",
     "commander": "^11.1.0",
-    "js-yaml": "^4.1.0",
+    "js-yaml": "^4.1.1",
     "octokit": "^5.0.5",
     "remark-directive": "^4.0.0",
     "remark-frontmatter": "^5.0.0",

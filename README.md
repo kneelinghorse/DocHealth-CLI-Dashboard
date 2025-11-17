@@ -392,6 +392,8 @@ cd dashboard && npm run build && cd ..
 - **[Generator Usage Guide](docs/usage-guide.md)** - CLI flags, merge behavior, and sample outputs
 - **[Examples](docs/examples/)** - Sample Markdown outputs from generators
 - **[Roadmap](docs/roadmap.md)** - Product vision and planned enhancements
+- **[Changelog](CHANGELOG.md)** - Release notes for each published version
+- **[Release Checklist](docs/release-checklist.md)** - Step-by-step verification before tagging
 
 ---
 

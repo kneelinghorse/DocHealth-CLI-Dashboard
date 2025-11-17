@@ -17,7 +17,6 @@ const {
 const {
   createProtocolRegistry,
   validateURNs,
-  generateRemediation,
   extractURNsFromManifest
 } = require('../lib/urn-resolver');
 const { registerMergeDocsCommand } = require('./commands/merge-docs');
@@ -34,7 +33,7 @@ const defaultDashboardRoot = path.join(__dirname, '..', 'dashboard');
 program
   .name('dochealth')
   .description('DocHealth CLI - Protocol-driven documentation health monitoring')
-  .version('0.1.0')
+  .version('1.0.0')
   .option('--json', 'Output results as JSON')
   .option('--threshold <number>', 'Health score threshold (0-100)', '70')
   .option('--config <path>', 'Path to config file', 'dochealth.config.js')
