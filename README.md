@@ -97,6 +97,7 @@ See [docs/technical_architecture.md](docs/technical_architecture.md) for full ar
 - **[Technical Architecture](docs/technical_architecture.md)** - System design, APIs, and data models
 - **[Generator Usage Guide](docs/usage-guide.md)** - CLI flags, merge behavior, and sample outputs
 - **[Examples](docs/examples/)** - Snapshot Markdown from the generators
+- **[GitHub PR Integration](docs/github_pr_integration.md)** - Setup for health delta comments in pull requests
 - **[Viability Assessment](VIABILITY_ASSESSMENT.md)** - Market validation and business case
 - **[CMOS Documentation](cmos/docs/)** - Project management system guides
 

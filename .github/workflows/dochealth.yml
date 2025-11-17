@@ -1,0 +1,55 @@
+name: DocHealth PR Comment
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  pr-comment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout head
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Prepare base worktree
+        run: |
+          git fetch origin ${{ github.event.pull_request.base.ref }} --depth=1
+          git worktree add ../dochealth-base ${{ github.event.pull_request.base.sha }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate head health report
+        run: |
+          node bin/dochealth.js check --json > $RUNNER_TEMP/head-report.json
+
+      - name: Generate base health report
+        run: |
+          pushd ../dochealth-base
+          npm ci
+          node bin/dochealth.js check --json > $RUNNER_TEMP/base-report.json
+          popd
+
+      - name: Post DocHealth delta comment
+        env:
+          DOCHEALTH_GITHUB_APP_ID: ${{ secrets.DOCHEALTH_GITHUB_APP_ID }}
+          DOCHEALTH_GITHUB_INSTALLATION_ID: ${{ secrets.DOCHEALTH_GITHUB_INSTALLATION_ID }}
+          DOCHEALTH_GITHUB_PRIVATE_KEY: ${{ secrets.DOCHEALTH_GITHUB_PRIVATE_KEY }}
+        run: |
+          node bin/dochealth.js pr-comment \
+            --repo ${{ github.repository }} \
+            --pr ${{ github.event.pull_request.number }} \
+            --before-report $RUNNER_TEMP/base-report.json \
+            --after-report $RUNNER_TEMP/head-report.json

@@ -23,6 +23,7 @@ const {
 const { registerMergeDocsCommand } = require('./commands/merge-docs');
 const { registerResolveCommand } = require('./commands/resolve');
 const { registerGenerateCommand } = require('./commands/generate');
+const { registerPRCommentCommand } = require('./commands/pr-comment');
 
 const program = new Command();
 
@@ -131,6 +132,7 @@ program
   });
 
 registerGenerateCommand(program);
+registerPRCommentCommand(program);
 
 // Diff command - stub
 program
