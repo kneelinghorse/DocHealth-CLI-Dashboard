@@ -27,6 +27,9 @@ DocHealth is a developer-first documentation health monitoring and auto-generati
 # Install dependencies
 npm install
 
+# Launch dashboard (API + Vite dev server)
+node bin/dochealth.js serve --port 3000
+
 # Run a health check across ./src protocols
 node bin/dochealth.js check --path ./src
 
@@ -39,6 +42,30 @@ node bin/dochealth.js generate api --path ./src --output ./docs/generated --no-m
 # Emit structured output for CI pipelines
 node bin/dochealth.js check --json > health-report.json
 ```
+
+### Dashboard Serve Command
+
+The `dochealth serve` command bootstraps the Express API, initializes the dashboard
+SQLite database (if needed), and proxies the Vite dev server so the entire dashboard is
+available on a single port.
+
+```
+# Development mode (default)
+node bin/dochealth.js serve --port 3000
+
+# Production mode (serve built assets from dashboard/dist)
+NODE_ENV=production node bin/dochealth.js serve --port 8080
+
+# Custom paths and stricter port handling
+node bin/dochealth.js serve \
+  --dashboard-root ./dashboard \
+  --db ./dashboard/server/data/dochealth.sqlite \
+  --host 0.0.0.0 \
+  --strict-port
+```
+
+The command automatically resolves port conflicts (unless `--strict-port` is provided),
+logs the UI/API URLs, and shuts down cleanly on <kbd>Ctrl+C</kbd>.
 
 ---
 

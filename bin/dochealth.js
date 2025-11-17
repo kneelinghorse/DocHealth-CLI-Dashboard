@@ -24,6 +24,7 @@ const { registerMergeDocsCommand } = require('./commands/merge-docs');
 const { registerResolveCommand } = require('./commands/resolve');
 const { registerGenerateCommand } = require('./commands/generate');
 const { registerPRCommentCommand } = require('./commands/pr-comment');
+const { serveDashboard } = require('../lib/serve');
 
 const program = new Command();
 
@@ -133,6 +134,64 @@ program
 
 registerGenerateCommand(program);
 registerPRCommentCommand(program);
+
+const defaultDashboardRoot = path.join(__dirname, '..', 'dashboard');
+
+program
+  .command('serve')
+  .description('Launch the DocHealth dashboard (API + Vite dev server)')
+  .option('--port <number>', 'Port for the dashboard server', '3000')
+  .option('--host <host>', 'Hostname to bind', '127.0.0.1')
+  .option(
+    '--dashboard-root <path>',
+    'Path to the dashboard workspace',
+    defaultDashboardRoot
+  )
+  .option(
+    '--db <path>',
+    'Path to the dashboard SQLite database (defaults to dashboard/server/data/dochealth.sqlite)'
+  )
+  .option('--mode <mode>', 'Override NODE_ENV (development|production)')
+  .option('--strict-port', 'Fail if the preferred port is unavailable')
+  .action(async options => {
+    try {
+      const parsedPort = Number.parseInt(options.port, 10);
+      if (!Number.isFinite(parsedPort) || parsedPort < 0) {
+        throw new Error(`Invalid port value: ${options.port}`);
+      }
+
+      const runtime = await serveDashboard({
+        port: parsedPort,
+        host: options.host,
+        dashboardRoot: options.dashboardRoot,
+        dbPath: options.db,
+        mode: options.mode,
+        strictPort: options.strictPort,
+        logger: {
+          info: message => console.log(chalk.blue(message)),
+          warn: message => console.warn(chalk.yellow(message)),
+          error: (message, err) => {
+            if (err) {
+              console.error(chalk.red(message), err);
+            } else {
+              console.error(chalk.red(message));
+            }
+          }
+        }
+      });
+
+      console.log(chalk.green('\n✅ DocHealth dashboard running'));
+      console.log(chalk.green(`→ UI: ${runtime.url}`));
+      console.log(chalk.green(`→ API base: ${runtime.url}/api/health`));
+      console.log(chalk.gray('Press Ctrl+C to stop the server.\n'));
+    } catch (error) {
+      console.error(chalk.red('Failed to start DocHealth dashboard:'), error.message);
+      if (program.opts().verbose && error.stack) {
+        console.error(error.stack);
+      }
+      process.exit(1);
+    }
+  });
 
 // Diff command - stub
 program
