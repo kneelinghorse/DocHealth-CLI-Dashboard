@@ -130,10 +130,6 @@ function createRateLimitOctokit(error) {
   };
 }
 
-function createTempReportsFixture() {
-  return createTempDir();
-}
-
 test('calculateHealthDelta detects new and resolved issues', () => {
   const beforeReport = buildReport({
     score: 70,

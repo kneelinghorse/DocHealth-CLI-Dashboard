@@ -1,0 +1,38 @@
+{
+  "root": true,
+  "env": {
+    "node": true,
+    "es2021": true
+  },
+  "extends": ["eslint:recommended"],
+  "parserOptions": {
+    "ecmaVersion": 2022
+  },
+  "ignorePatterns": [
+    "dashboard/",
+    "cmos/"
+  ],
+  "overrides": [
+    {
+      "files": [
+        "tests/unit/urn-resolver.test.js",
+        "tests/fixtures/**/*.js"
+      ],
+      "parserOptions": {
+        "sourceType": "module"
+      }
+    }
+  ],
+  "rules": {
+    "max-len": [
+      "warn",
+      {
+        "code": 100,
+        "ignoreStrings": true,
+        "ignoreTemplateLiterals": true,
+        "ignoreComments": true,
+        "ignoreUrls": true
+      }
+    ]
+  }
+}

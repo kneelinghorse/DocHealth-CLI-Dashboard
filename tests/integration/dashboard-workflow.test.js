@@ -223,7 +223,8 @@ test('writeToDashboard preserves CLI analysis fields', { timeout: 60000 }, async
       const protocol = payload.analysisResults.protocols[index];
       assert.equal(snapshot.protocolName, protocol.id);
       assert.equal(snapshot.healthScore, protocol.combined.healthScore);
-      const { id, ...rawWithoutId } = protocol;
+      const { id: protocolId, ...rawWithoutId } = protocol;
+      void protocolId;
       assert.deepEqual(snapshot.rawAnalysisOutput, rawWithoutId);
     });
 

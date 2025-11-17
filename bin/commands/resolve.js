@@ -35,6 +35,7 @@ async function promptManualContent(rl) {
     )
   );
   const lines = [];
+  // eslint-disable-next-line no-constant-condition
   while (true) {
     const answer = await rl.question('manual> ');
     if (answer.trim() === '.') break;
@@ -87,6 +88,7 @@ async function promptResolution(rl, conflict) {
     console.log(`${option.key}. ${option.label}`);
   });
 
+  // eslint-disable-next-line no-constant-condition
   while (true) {
     const answer = (await rl.question('Select option (1-3): ')).trim();
     const choice = options.find(option => option.key === answer);
