@@ -1,0 +1,78 @@
+{
+  "healthScore": {
+    "overallScore": 86.5
+  },
+  "analysisResults": {
+    "total": 2,
+    "protocols": [
+      {
+        "id": "api.orders.v1",
+        "type": "api",
+        "freshness": {
+          "healthScore": 85,
+          "freshnessScore": 0.85,
+          "isStale": false,
+          "severity": "low",
+          "daysStale": 2,
+          "enabled": true,
+          "hasTimestamps": true,
+          "recommendations": []
+        },
+        "coverage": {
+          "coveragePercentage": 92,
+          "documentedItems": 23,
+          "totalItems": 25,
+          "missingDocumentation": [
+            "GET /orders/:id"
+          ]
+        },
+        "combined": {
+          "healthScore": 88,
+          "issueCount": 1,
+          "urgency": "medium"
+        }
+      },
+      {
+        "id": "data.catalog.inventory",
+        "type": "data",
+        "freshness": {
+          "healthScore": 74,
+          "freshnessScore": 0.62,
+          "isStale": true,
+          "severity": "medium",
+          "daysStale": 18,
+          "enabled": true,
+          "hasTimestamps": true,
+          "recommendations": [
+            "Regenerate catalog documentation",
+            "Update sample queries"
+          ]
+        },
+        "coverage": {
+          "coveragePercentage": 68,
+          "documentedItems": 34,
+          "totalItems": 50,
+          "missingDocumentation": [
+            "inventory_adjustments",
+            "return_authorizations"
+          ]
+        },
+        "combined": {
+          "healthScore": 71,
+          "issueCount": 4,
+          "urgency": "high"
+        }
+      }
+    ]
+  },
+  "protocolSources": [
+    {
+      "path": "src/api_protocol_v_1_1_1.js",
+      "type": "api"
+    },
+    {
+      "path": "src/data_protocol_v_1_1_1.js",
+      "type": "data"
+    }
+  ]
+}
