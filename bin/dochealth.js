@@ -25,8 +25,10 @@ const { registerResolveCommand } = require('./commands/resolve');
 const { registerGenerateCommand } = require('./commands/generate');
 const { registerPRCommentCommand } = require('./commands/pr-comment');
 const { serveDashboard } = require('../lib/serve');
+const { writeToDashboard, DashboardWriterError } = require('../lib/dashboard-writer');
 
 const program = new Command();
+const defaultDashboardRoot = path.join(__dirname, '..', 'dashboard');
 
 // Global options
 program
@@ -44,6 +46,10 @@ program
   .description('Check documentation health across protocols')
   .option('-p, --path <path>', 'Path to protocol manifests', './src')
   .option('--strict', 'Fail on any issues (exit code 1)')
+  .option(
+    '--write-db [path]',
+    'Write results to the dashboard SQLite database (optional path override)'
+  )
   .action(async (options) => {
     try {
       console.log(chalk.blue('🔍 Running documentation health check...\n'));
@@ -114,6 +120,45 @@ program
         threshold: parseInt(globalOpts.threshold),
         strict: options.strict
       });
+
+      const writeDbFlagProvided = typeof options.writeDb !== 'undefined';
+      if (writeDbFlagProvided) {
+        const dbPathOverride =
+          typeof options.writeDb === 'string' && options.writeDb.trim().length > 0
+            ? options.writeDb.trim()
+            : undefined;
+        try {
+          const writeResult = await writeToDashboard({
+            healthScore,
+            analysisResults,
+            protocolSources: loadResults.protocols,
+            dbPath: dbPathOverride,
+            dashboardRoot: defaultDashboardRoot,
+            logger: {
+              info: message => console.log(chalk.gray(`↳ ${message}`)),
+              warn: message => console.warn(chalk.yellow(message)),
+              error: message => console.error(chalk.red(message))
+            }
+          });
+          console.log(
+            chalk.green(
+              `\n💾 Dashboard updated (run #${writeResult.runId}, ${writeResult.protocolsCount} protocols)`
+            )
+          );
+          console.log(chalk.gray(`   Path: ${writeResult.dbPath}`));
+        } catch (dashboardError) {
+          if (dashboardError instanceof DashboardWriterError) {
+            console.warn(chalk.yellow(`\n⚠️  Dashboard write skipped: ${dashboardError.message}`));
+          } else {
+            console.warn(chalk.yellow('\n⚠️  Failed to write to dashboard database'));
+            if (program.opts().verbose && dashboardError.stack) {
+              console.error(dashboardError.stack);
+            } else if (dashboardError?.message) {
+              console.warn(chalk.yellow(dashboardError.message));
+            }
+          }
+        }
+      }
       
       if (exitCode === 0) {
         console.log(chalk.green('\n✅ Health check passed'));
@@ -134,8 +179,6 @@ program
 
 registerGenerateCommand(program);
 registerPRCommentCommand(program);
-
-const defaultDashboardRoot = path.join(__dirname, '..', 'dashboard');
 
 program
   .command('serve')
